@@ -79,10 +79,13 @@ const Device = async (req, res) => {
             Room_ID: Room_ID
         };
 
-        const user = await DataBase.findOne(Email);
+        const user = await DataBase.findOne({ Email: Email });
         if (user) {
             let update = await DataBase.findOneAndUpdate({ _id: user._id }, { $push: { Device: [Device] } });
             return res.status(200).json({ message: "device added" });
+        }
+        else{
+            return res.status(400).json({message:"provide Valid Email"})
         }
     } catch (error) {
         console.log(error);

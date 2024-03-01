@@ -26,6 +26,9 @@ const Registration = async (req, res) => {
         return res.status(500).json(error);
     }
 }
+
+
+
 const Login = async (req, res) => {
     const { Email, Password } = req.body;
     try {
@@ -52,6 +55,39 @@ const Login = async (req, res) => {
     } catch (error) {
         return res.status(400).json(error);
     }
-};
+}; 
 
-module.exports = {Registration,Login,data};
+
+
+const data = async (req, res) => {
+    try {
+        const data = await DataBase.find().select('-Password'); // Excluding the 'Password' field
+        return res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json(error);
+    }
+}
+
+
+
+const Device = async (req, res) => {
+    const { Email, Device_Name, Room_ID } = req.body;
+    try {
+        const Device = {
+            Device_Name: Device_Name,
+            Room_ID: Room_ID
+        };
+
+        const user = await DataBase.findOne(Email);
+        if (user) {
+            let update = await DataBase.findOneAndUpdate({ _id: user._id }, { $push: { Device: [Device] } });
+            return res.status(200).json({ message: "device added" });
+        }
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json(error);
+    }
+}
+
+module.exports = { Registration, Login, data, Device };

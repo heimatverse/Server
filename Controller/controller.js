@@ -58,6 +58,27 @@ const Login = async (req, res) => {
 }; 
 
 
+const AddTopic = async (req, res) => {
+    const { Topic, Email } = req.body;
+    try {
+        // Validate Topic and Email before proceeding
+        if (!Topic || !Email) {
+            return res.status(400).json({ message: "Invalid data provided" });
+        }
+
+        const user = await DataBase.findOne({ Email: Email }).exec();
+        if (user) {
+            await DataBase.findOneAndUpdate({ _id: user._id }, { $addToSet: { Topics: Topic } });
+            return res.status(200).json({ message: "Topic is saved" });
+        } else {
+            console.log("User not found");
+            return res.status(404).json({ message: "User not found" });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(400).json(error);
+    }
+}
 
 const data = async (req, res) => {
     try {
@@ -93,4 +114,4 @@ const Device = async (req, res) => {
     }
 }
 
-module.exports = { Registration, Login, data, Device };
+module.exports = { Registration, Login, data, Device ,AddTopic};

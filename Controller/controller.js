@@ -3,27 +3,80 @@ const DataBase = require("../Schema/model");
 const JWT = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const jwtSecret = 'FallbackSecretKey';
+const nodemailer = require("nodemailer");
+const fs= require("fs");
+const { response } = require("express");
 
 const Create_token = (id) => {
     return JWT.sign({ id }, jwtSecret)
 }
 
+
+
+const Verifyemail = async (email, Id, Name) => {
+    try {
+        const transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 587,
+            secure: false,
+            requireTLS: true,
+            auth: {
+                user: "smawari1000@gmail.com",
+                pass: 'ukeivcvndhomfclr'
+            }
+        });
+
+        const mailOption = {
+            from: "smawari1000@gmail.com",
+            to: email,
+            subject: "For verification of Email",
+            html: `<p>hi ${Name}, please click on <a href="http://localhost:8888/Heimatverse/verify?id=${Id}">verify</a></p>`
+        }
+        transporter.sendMail(mailOption, function (error, info) {
+            if (error) {
+                console.log(error);
+            } else {
+                console.log(info.response);
+            }
+        });
+    } catch (err) {
+        console.log(err);
+    }
+}
+
 const Registration = async (req, res) => {
     const { Name, Password, PhoneNumber, Email } = req.body;
     try {
-        const exist = await DataBase.findOne({ Email: req.body.Email });
+        const exist = await DataBase.findOne({ Email });
         if (!exist) {
-            const hashpassword = await bcrypt.hash(req.body.Password, 10);
-            const new_user = new DataBase({ Name, Password: hashpassword, PhoneNumber, Email })
-            await new_user.save();
-            return res.status(200).json({ messsage: "New User Created" });
+            const hashpassword = await bcrypt.hash(Password, 10);
+            const new_user = new DataBase({ Name, Password: hashpassword, PhoneNumber, Email });
+            const user = await new_user.save();
+            Verifyemail(Email, user._id, Name);
+            return res.status(200).json({ message: "New User Created" });
         } else {
-            return res.status(403).json({ message: "User already exist" });
+            return res.status(403).json({ message: "User already exists" });
         }
-
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
     }
-    catch (error) {
-        return res.status(500).json(error);
+}
+ 
+const verify = async (req, res) => {
+    try {
+        const update = await DataBase.updateOne({ _id: req.query.id }, { $set: { Verified: true } });
+        console.log(update);
+        fs.readFile('verify.html', null, function(err, data) {
+            if (err) {
+                console.log(err);
+                res.write("file not found");
+            } else {
+                res.write(data);
+            }
+            res.end();
+        });
+    } catch (err) {
+        console.log(err.message);
     }
 }
 
@@ -55,7 +108,7 @@ const Login = async (req, res) => {
     } catch (error) {
         return res.status(400).json(error);
     }
-}; 
+};
 
 
 const AddTopic = async (req, res) => {
@@ -105,8 +158,8 @@ const Device = async (req, res) => {
             let update = await DataBase.findOneAndUpdate({ _id: user._id }, { $push: { Device: [Device] } });
             return res.status(200).json({ message: "device added" });
         }
-        else{
-            return res.status(400).json({message:"provide Valid Email"})
+        else {
+            return res.status(400).json({ message: "provide Valid Email" })
         }
     } catch (error) {
         console.log(error);
@@ -114,4 +167,4 @@ const Device = async (req, res) => {
     }
 }
 
-module.exports = { Registration, Login, data, Device ,AddTopic};
+module.exports = { Registration, Login, data, Device, AddTopic ,verify};

@@ -1,7 +1,7 @@
 const express = require("express");
 const Routes = express.Router();
 const {Authentication} = require("../Middleware/JWT")
-const {Registration,Login,data,Device,AddTopic} = require("../Controller/controller");
+const {Registration,Login,data,Device,AddTopic,verify} = require("../Controller/controller");
 
 
 
@@ -9,6 +9,7 @@ Routes.route("/Register").post(Registration);
 Routes.route("/AddDevice").post(Authentication,Device);
 Routes.route("/AddTopics").post(Authentication,AddTopic);
 Routes.route("/data").get(Authentication,data);
+Routes.route("/verify").get(verify);
 Routes.route("/login").get(Login);
 
 module.exports = Routes;

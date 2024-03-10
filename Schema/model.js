@@ -12,7 +12,13 @@ const schema = mongoose.Schema({
     PhoneNumber: { type: Number, required: true },
     Email: { type: String, required: true },
     Device: [Device],
-    Topics: [String]
+    Topics: [String],
+    Verified: {
+        type: Boolean,
+        default: false
+    },
+    Subscription: [String]
+
 });
 
 const reg = mongoose.model('Heimatverse-data', schema);

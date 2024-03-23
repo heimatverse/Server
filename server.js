@@ -1,4 +1,8 @@
 const express = require("express");
+
+const RoomDB = require("./Schema/Room");
+const DeviceDB = require("./Schema/Device");
+const HomeDB = require("./Schema/Home")
 const app = express();
 const bcrypt = require("bcrypt")
 const DataBase = require("./Schema/model")
@@ -49,29 +53,67 @@ aedes.authenticate = async (client, Email, password, callback) => {
 }
 
 
+// aedes.authorizePublish = async (client, packet, callback) => {
+//   const packet_topic = packet.topic;
+//   const Email = client.Email;
+//   try {
+//       const user = await DataBase.findOne({ Email: Email });
+//       if (user) {
+//           const topics = user.Topics;
+//           const found = topics.indexOf(packet_topic);
+//           if (found !== -1) {
+//               return callback(null);
+//           } else {
+//               console.log('Error ! Unauthorized publish to a topic.')
+//               return callback(new Error('You are not authorized to publish on this message topic.'));
+//           }
+//       } else {
+//           console.log('Error ! Client not found.')
+//           return callback(new Error('Client not found'));
+//       }
+//   } catch (error) {
+//       console.log('Error occurred while authorizing publish:', error);
+//       return callback(error);
+//   }
+// }
+
+
 aedes.authorizePublish = async (client, packet, callback) => {
-  const packet_topic = packet.topic;
-  const Email = client.Email;
-  try {
-      const user = await DataBase.findOne({ Email: Email });
-      if (user) {
-          const topics = user.Topics;
-          const found = topics.indexOf(packet_topic);
-          if (found !== -1) {
-              return callback(null);
-          } else {
-              console.log('Error ! Unauthorized publish to a topic.')
-              return callback(new Error('You are not authorized to publish on this message topic.'));
-          }
-      } else {
-          console.log('Error ! Client not found.')
-          return callback(new Error('Client not found'));
-      }
-  } catch (error) {
-      console.log('Error occurred while authorizing publish:', error);
-      return callback(error);
-  }
-}
+    const packet_topic = packet.topic;
+    const Email = client.Email;
+
+    try {
+        const user = await DataBase.findOne({ Email });
+        if (!user) {
+            // User not found, you can't send HTTP responses here
+            console.log("User not found");
+            return callback(new Error("User not found"));
+        }
+
+        const Home = user.Home_Id;
+        const homeData = await HomeDB.findById(Home);
+        if (!homeData) {
+            // Home data not found
+            console.log("Home data not found");
+            return callback(new Error("Home data not found"));
+        }
+
+        // Check if the packet topic matches the home topic
+        if (homeData.Topic === packet_topic) {
+            // Authorized to publish
+            return callback(null);
+        } else {
+            // Not authorized
+            console.log("Unauthorized");
+            return callback(new Error("Unauthorized"));
+        }
+    } catch (error) {
+        console.log('Error occurred while authorizing publish:', error);
+        return callback(error);
+    }
+};
+
+
 // emitted when a client connects to the broker
 aedes.on('client', function (client) {
     console.log(`CLIENT_CONNECTED : MQTT Client ${(client ? client.id : client)}connected to aedes broker ${aedes.id}`)

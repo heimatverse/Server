@@ -92,26 +92,26 @@ const Homecreate = async (req, res) => {
 }
 
 const Home_user = async(req,res) =>{
-    const {Email,HomeName}= req.body;
-    try{
-        if (Email && HomeName) {
+    const { Email, Home_Id } = req.body; 
+    try {
+        if (Email && Home_Id) { 
             const user = await DataBase.findOne({ Email: Email });
             if (user) {
                 const user_id = user._id;
-                const RoomUserSet = await RoomDB.findOneAndUpdate({HomeName:req.body.HomeName},{$addToSet:{User_ID:user_id}})
-                const roomID = roomAdmin._id;
-                const update_user = await DataBase.findOneAndUpdate({ Email }, { $addToSet: { Home_Id: roomID } })
-                await roomAdmin.save();
-                return res.status(200).json({ message: "Home Joined", roomID });
+           
+                const updatedHome = await HomeDB.findOneAndUpdate({ _id: Home_Id }, { $addToSet: { User_ID: user_id } }, { new: true });
+     
+                const updatedUser = await DataBase.findOneAndUpdate({ Email: Email }, { $addToSet: { Home_Id: Home_Id } }, { new: true });
+                return res.status(200).json({ message: "Home Joined", updatedHome, updatedUser });
             } else {
                 return res.status(404).json({ message: "User not found" });
             }
         } else {
-            return res.status(400).json({ message: "Provide Email" });
+            return res.status(400).json({ message: "Provide Email and Home_Id" }); 
         }
-    }catch(error){
-        console.log(error);
-        return res.status(200).json(error);
+    } catch(error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal Server Error" }); 
     }
 }
 
@@ -166,20 +166,30 @@ const Login = async (req, res) => {
     }
 };
 
+//add room if id not correct i got
+
 
 const addRoom = async (req, res) => {
-    const { Email, RoomName, HomeName } = req.body;
+    const { Email, RoomName, Home_Id } = req.body;
+
     try {
+        if (!mongoose.Types.ObjectId.isValid(Home_Id)) {
+            return res.status(400).json({ message: "Invalid Home_Id" });
+        }
         // Find the user
         const user = await DataBase.findOne({ Email: Email });
         if (!user) return res.status(400).json({ message: "User not found" });
 
         // Find the home
-        const home = await HomeDB.findOne({ HomeName: HomeName, Home_owner: user._id });
+        const home = await HomeDB.findOne({ _id:Home_Id, Home_owner: user._id });
         if (!home) return res.status(404).json({ message: "User is not the owner of the Home or Home not found" });
 
+        const Same_roomname = await RoomDB.findOne({Room_Name:RoomName,Home_id: Home_Id})
+        if(Same_roomname){
+            return res.status(404).json({message:"are bhai dusra naame rhkle room na already tere ghr mai same name ka room ha "})
+        }
         // Create room
-        const room = new RoomDB({ Room_Name: RoomName });
+        const room = new RoomDB({ Room_Name: RoomName,Home_id: Home_Id});
         await room.save(); // Save room to database
 
         // Update home with new room
@@ -213,7 +223,6 @@ const getUserData = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
-
         return res.status(200).json(user);
     } catch (err) {
         console.error(err);
@@ -225,30 +234,33 @@ const getUserData = async (req, res) => {
 
 
 const addDevice = async(req,res)=>{
-    const { Email, RoomName, HomeName ,Device_name} = req.body;
-    try{
+    const { Email, Room_id, Home_Id ,Device_name} = req.body;
+    try {
         const user = await DataBase.findOne({ Email: Email });
         if (!user) return res.status(400).json({ message: "User not found" });
-        
-        const room = await RoomDB.findOne({Room_Name:RoomName});
-        if(!room)return res.status(404).json({ message: "Room not found" }) 
-        
-        const home = await HomeDB.findOne({ HomeName: HomeName, Home_owner: user._id ,Room_ID:room._id});
-        if (!home) return res.status(404).json({ message: "User is not the owner of the Home or Home not found" });
-        
 
-        const device = new DeviceDB({Device_name:Device_name});
+        const home = await HomeDB.findOne({ _id: Home_Id, Home_owner: user._id, Room_ID: Room_id });
+        if (!home) return res.status(404).json({ message: "User is not the owner of the Home or Home not found" });
+
+        const Device_in_room = await DeviceDB.findOne({Device_name:Device_name,Room_id:Room_id});
+        if(Device_in_room){
+            return res.status(400).json({Messaage:"room already have this named device"});
+        }
+        const device = new DeviceDB({ Device_name: Device_name ,Room_id:Room_id});
         await device.save();
 
-        room.Devices_id.push(device._id);
-        room.save();
-        return res.status(200).json({ message: "Device is added" });
+        const room = await RoomDB.findById(Room_id);
+        if (!room) return res.status(404).json({ message: "Room not found" }); 
 
-    }
-    catch(error){
-        console.log(error);
-        return res.status(error);
+        room.Devices_id.push(device._id);
+        await room.save();
+        return res.status(200).json({ message: "Device is added" });
+    } catch(error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 }
+
+
 module.exports = { Registration, Login, verify ,Homecreate,addDevice,addRoom,Home_user,getUserData};
 

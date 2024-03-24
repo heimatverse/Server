@@ -7,7 +7,6 @@ const HomeSchema = new mongoose.Schema({
     },
     HomeName: {
         type: String,
-        unique: true,
         required: true
     },
     Topic:{

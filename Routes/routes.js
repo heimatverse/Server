@@ -6,14 +6,12 @@ const { Registration, Login, verify ,Homecreate,getUserData,addDevice,addRoom,Ho
 
 
 Routes.route("/Register").post(Registration);
-// Routes.route("/AddDevice").post(Authentication,Device);
-Routes.route("/addDevice").post(addDevice);
-Routes.route("/Homecreate").post(Homecreate);
-Routes.route("/Home_user").post(Home_user);
-Routes.route("/addRoom").post(addRoom);
+Routes.route("/addDevice").post(Authentication,addDevice);
+Routes.route("/Homecreate").post(Authentication,Homecreate);
+Routes.route("/Home_user").post(Authentication,Home_user);
+Routes.route("/addRoom").post(Authentication,addRoom);
 Routes.route("/verify").get(verify);
-// Routes.route("/userdata").get(userdata);
 Routes.route("/login").get(Login);
-Routes.route("/userdata").get(getUserData)
+Routes.route("/userdata").get(Authentication,getUserData)
 
 module.exports = Routes;

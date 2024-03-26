@@ -1,5 +1,5 @@
 const express = require("express");
-
+// const client = require("./redis.js");
 const RoomDB = require("./Schema/Room");
 const DeviceDB = require("./Schema/Device");
 const HomeDB = require("./Schema/Home")
@@ -51,32 +51,6 @@ aedes.authenticate = async (client, Email, password, callback) => {
         return callback(error, false);
     }
 }
-
-
-// aedes.authorizePublish = async (client, packet, callback) => {
-//   const packet_topic = packet.topic;
-//   const Email = client.Email;
-//   try {
-//       const user = await DataBase.findOne({ Email: Email });
-//       if (user) {
-//           const topics = user.Topics;
-//           const found = topics.indexOf(packet_topic);
-//           if (found !== -1) {
-//               return callback(null);
-//           } else {
-//               console.log('Error ! Unauthorized publish to a topic.')
-//               return callback(new Error('You are not authorized to publish on this message topic.'));
-//           }
-//       } else {
-//           console.log('Error ! Client not found.')
-//           return callback(new Error('Client not found'));
-//       }
-//   } catch (error) {
-//       console.log('Error occurred while authorizing publish:', error);
-//       return callback(error);
-//   }
-// }
-
 
 aedes.authorizePublish = async (client, packet, callback) => {
     const packet_topic = packet.topic;
@@ -163,6 +137,8 @@ aedes.on('unsubscribe', function (subscriptions, client) {
 })
 // emitted when a client publishes a message packet on the topic
 aedes.on('publish', function (packet, client) {
+    // const data = packet.payload;
+    // const Device = data.
     if (client) {
         console.log(`MESSAGE_PUBLISHED : MQTT Client ${(client ? client.id : 'AEDES BROKER_' + aedes.id)} has published message "${packet.payload}" on ${packet.topic} to aedes broker ${aedes.id}`)
     }

@@ -11,7 +11,7 @@ Routes.route("/Homecreate").post(Authentication,Homecreate);
 Routes.route("/Home_user").post(Authentication,Home_user);
 Routes.route("/addRoom").post(Authentication,addRoom);
 Routes.route("/verify").get(verify);
-Routes.route("/login").get(Login);
+Routes.route("/login").post(Login);
 Routes.route("/userdata").get(Authentication,getUserData)
 
 module.exports = Routes;

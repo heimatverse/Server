@@ -196,7 +196,7 @@ const addRoom = async (req, res) => {
         home.Room_ID.push(room._id);
         await home.save();
 
-        return res.status(200).json({ message: "Room added successfully" });
+        return res.status(200).json(room._id);
     } catch (error) {
         console.log(error);
         return res.status(400).json(error);

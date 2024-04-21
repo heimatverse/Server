@@ -265,7 +265,7 @@ const addRoom = async (req, res) => {
             const room = new RoomDB({ Room_Name: RoomName, Home_id: Home_Id });
             await room.save(); // Save room to database
 
-<<<<<<< HEAD
+// <<<<<<< HEAD
             // Update home with new room
             home.Room_ID.push(room._id);
             await home.save();
@@ -274,13 +274,13 @@ const addRoom = async (req, res) => {
         else {
             return res.status(401).json({ Message: "user Email Not verified" })
         }
-=======
+
         // Update home with new room
         home.Room_ID.push(room._id);
         await home.save();
 
         return res.status(200).json(room._id);
->>>>>>> 8299e312b6b97f7d59e162961f489f6d804bdacd
+// >>>>>>> 8299e312b6b97f7d59e162961f489f6d804bdacd
     } catch (error) {
         console.log(error);
         return res.status(400).json(error);

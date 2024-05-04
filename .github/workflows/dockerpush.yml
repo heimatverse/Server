@@ -11,6 +11,7 @@ on:
       - main
 
 jobs:
+
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
@@ -37,7 +38,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          
+
   update_ssh_linode:
     name: Telling Linode Server to Update
     needs: "push_to_registry"

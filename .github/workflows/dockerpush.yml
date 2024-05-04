@@ -43,6 +43,7 @@ jobs:
     name: Telling Linode Server to Update
     needs: "push_to_registry"
     runs-on: ubuntu-latest
+    
     steps:
     - name: executing remote ssh commands using password
       uses: appleboy/ssh-action@master

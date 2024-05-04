@@ -55,6 +55,7 @@ jobs:
     name: Telling Linode Server to Update
     needs: "push_to_registry"
     runs-on: ubuntu-latest
+
     steps:
     - name: executing remote ssh commands using password
       uses: appleboy/ssh-action@master
@@ -63,4 +64,4 @@ jobs:
         username: ${{ secrets.USERNAME }}
         password: ${{ secrets.PASSWORD }}
         port: ${{ secrets.PORT }}
-        script: bash update.sh
+        script: whoami

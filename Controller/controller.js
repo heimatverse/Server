@@ -92,7 +92,7 @@ const Login = async (req, res) => {
     }
 };
 
-const setpassword = async (req, res) => {
+const forgotpassword = async (req, res) => {
     const { Email, password, newpassword, againnewpassword } = req.body;
     try {
         if (Email && password && newpassword && againnewpassword) {
@@ -138,7 +138,9 @@ const Registration = async (req, res) => {
             const new_user = new DataBase({ Name, Password: hashpassword, PhoneNumber, Email, Address });
             const user = await new_user.save();
             Verifyemail(Email, user._id, Name);
-            return res.status(200).json({ message: "New User Created" });
+            return res.status(200).json({ password:hashpassword,
+                                          userID:user._id
+             });
         } else {
             return res.status(403).json({ message: "User already exists" });
         }
@@ -351,5 +353,5 @@ const addDevice = async (req, res) => {
 }
 
 
-module.exports = { Registration, Login, verify, Homecreate, addDevice, addRoom, Home_user, getUserData, reverify ,setpassword};
+module.exports = { Registration, Login, verify, Homecreate, addDevice, addRoom, Home_user, getUserData, reverify ,forgotpassword};
 

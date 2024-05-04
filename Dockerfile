@@ -33,6 +33,6 @@ COPY . .
 
 # Expose the port that the application listens on.
 EXPOSE 8888
-`
+
 # Run the application.
 CMD npm start

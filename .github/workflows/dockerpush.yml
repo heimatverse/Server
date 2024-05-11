@@ -11,6 +11,19 @@ on:
       - main
 
 jobs:
+  node_build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: use node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+
+      - run: npm install
+      
 
   push_to_registry:
     name: Push Docker image to Docker Hub
@@ -29,7 +42,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
         with:
-          images: sahil1006/Autumn8-docker
+          images: heimatverse/server
       
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -52,4 +65,4 @@ jobs:
         username: ${{ secrets.USERNAME }}
         password: ${{ secrets.PASSWORD }}
         port: ${{ secrets.PORT }}
-        script: whoami
+        script: bash update.sh

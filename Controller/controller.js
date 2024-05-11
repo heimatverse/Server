@@ -106,57 +106,39 @@ const kickuser = async (req, res) => {
 
 
 
-// const kickuser = async(req,res)=>{
-//     const {home_id,user_id,target_id} = req.body;
-//     try{
-//         const controller = await HomeDB.findById({home_id});
-//         if(controller.Home_owner != user_id){
-//             return res.status(401).json("user not owner of Home");
-//         }
-//         let found = false;
-//         controller.User_ID.forEach((element)=>{
-//             if(element == target_id){
-//                 found = true;
-//             }
-//         })
-//         if(!found){
-//             return res.status(401).json("target not found");
-//         }
 
-//     }
-//     catch(error){
-//         console.log(error);
-//         return res.status(400).json(error);
-//     }
-// }
-
-
-const deleteHome = async(req,res)=>{
-    const{home_id,user_id}= req.body;
-    try{
-        const Home = await HomeDB.findById({home_id});
-        if(!Home){
-            return res.status(404).json({error:"HOME NOT FOUND"});
+const deleteHome = async (req, res) => {
+    const { home_id, user_id } = req.body;
+    try {
+        const home = await HomeDB.findById(home_id);
+        if (!home) {
+            return res.status(404).json({ error: "HOME NOT FOUND" });
         }
-        if(Home.Home_owner != user_id){
-            return re.status(401).json({error:"USER NOT OWNER OF HOME"})
+        if (String(home.Home_owner) !== user_id) {
+            return res.status(401).json({ error: "USER NOT OWNER OF HOME" });
         }
-        await HomeDB.findByIdAndDelete({home_id});
-        const user= await DataBase.findById({user_id});
-        let index = user.Home_Id.indexOf(home_id);
-        if(index == -1){
-            return res.status(404).json({error:"index is -1"})
-        }
-        user.Home_Id.splice(index,1);
-        await user.save();
-        await Home.save();
-        return res.status(200).json({message:"Home delete"})
+        await HomeDB.findByIdAndDelete(home_id);
         
-    }catch(error){
+        const user = await DataBase.findById(user_id);
+        if (!user) {
+            return res.status(404).json({ error: "USER NOT FOUND" });
+        }
+
+        const index = user.Home_Id.indexOf(home_id);
+        if (index === -1) {
+            return res.status(404).json({ error: "Home not associated with user" });
+        }
+
+        user.Home_Id.splice(index, 1);
+        await user.save();
+        
+        return res.status(200).json({ message: "Home deleted" });
+    } catch (error) {
         console.log(error);
-        return res.status(400).json(error);
+        return res.status(500).json({ error: "Internal server error" });
     }
 }
+
 const Login = async (req, res) => {
     const { Email, Password } = req.body;
     try {
@@ -449,6 +431,35 @@ const getUserData = async (req, res) => {
 }
 
 
+const deleteRoom = async (req, res) => {
+    const { user_id, home_id, room_id } = req.body;
+    try {
+        const home = await HomeDB.findById(home_id);
+        if (!home) {
+            return res.status(404).json({ error: "Home not found" });
+        }
+        if (String(home.Home_owner) !== user_id) {
+            return res.status(403).json({ error: "User is not owner of the home" });
+        }
+        if (!home.Room_ID || !Array.isArray(home.Room_ID)) {
+            return res.status(500).json({ error: "Invalid room data in the home document" });
+        }
+        const index = home.Room_ID.indexOf(room_id);
+        if (index === -1) {
+            return res.status(404).json({ error: "Room is not in this Home" });
+        }
+
+        const delete_Room = await RoomDB.findByIdAndDelete(room_id);
+        home.Room_ID.splice(index, 1);
+        await home.save();
+        return res.status(200).json({ message: "Room is deleted" });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+
 
 
 const addDevice = async (req, res) => {
@@ -485,5 +496,5 @@ const addDevice = async (req, res) => {
 }
 
 
-module.exports = { Registration, Login, verify, Homecreate, addDevice, addRoom, kickuser,Home_user, getUserData, reverify, forgotpassword ,deleteHome,Refresh_token};
+module.exports = { Registration, Login, deleteRoom,verify, Homecreate, addDevice, addRoom, kickuser,Home_user, getUserData, reverify, forgotpassword ,deleteHome,Refresh_token};
 

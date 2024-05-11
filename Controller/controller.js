@@ -6,12 +6,16 @@ const HomeDB = require("../Schema/Home")
 const JWT = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const jwtSecret = 'FallbackSecretKey';
+const Rtoken = "refreshtokenkey";
 const nodemailer = require("nodemailer");
 const fs = require("fs");
 const { response } = require("express");
 
 const Create_token = (id) => {
     return JWT.sign({ id }, jwtSecret)
+}
+const refresh_token = (id) => {
+    return JWT.sign({ id }, Rtoken)
 }
 
 const Verifyemail = async (email, Id, Name) => {
@@ -64,6 +68,95 @@ const reverify = async (req, res) => {
 
     }
 }
+
+const kickuser = async (req, res) => {
+    const { home_id, user_id, target_id } = req.body;
+    try {
+        // Find the home
+        const home = await HomeDB.findById(home_id);
+
+        // Check if the home exists
+        if (!home) {
+            return res.status(404).json({ error: "Home not found" });
+        }
+
+        // Check if the user making the request is the owner of the home
+        if (home.Home_owner.toString() !== user_id) {
+            return res.status(401).json({ error: "User is not the owner of the home" });
+        }
+
+        // Check if the target user exists in the home's User_ID array
+        const targetUserIndex = home.User_ID.indexOf(target_id);
+        if (targetUserIndex === -1) {
+            return res.status(404).json({ error: "Target user not found in the home" });
+        }
+
+        // Remove the target user from the User_ID array
+        home.User_ID.splice(targetUserIndex, 1);
+        
+        // Save the updated home
+        await home.save();
+
+        return res.status(200).json({ message: "User removed successfully" });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+
+
+// const kickuser = async(req,res)=>{
+//     const {home_id,user_id,target_id} = req.body;
+//     try{
+//         const controller = await HomeDB.findById({home_id});
+//         if(controller.Home_owner != user_id){
+//             return res.status(401).json("user not owner of Home");
+//         }
+//         let found = false;
+//         controller.User_ID.forEach((element)=>{
+//             if(element == target_id){
+//                 found = true;
+//             }
+//         })
+//         if(!found){
+//             return res.status(401).json("target not found");
+//         }
+
+//     }
+//     catch(error){
+//         console.log(error);
+//         return res.status(400).json(error);
+//     }
+// }
+
+
+const deleteHome = async(req,res)=>{
+    const{home_id,user_id}= req.body;
+    try{
+        const Home = await HomeDB.findById({home_id});
+        if(!Home){
+            return res.status(404).json({error:"HOME NOT FOUND"});
+        }
+        if(Home.Home_owner != user_id){
+            return re.status(401).json({error:"USER NOT OWNER OF HOME"})
+        }
+        await HomeDB.findByIdAndDelete({home_id});
+        const user= await DataBase.findById({user_id});
+        let index = user.Home_Id.indexOf(home_id);
+        if(index == -1){
+            return res.status(404).json({error:"index is -1"})
+        }
+        user.Home_Id.splice(index,1);
+        await user.save();
+        await Home.save();
+        return res.status(200).json({message:"Home delete"})
+        
+    }catch(error){
+        console.log(error);
+        return res.status(400).json(error);
+    }
+}
 const Login = async (req, res) => {
     const { Email, Password } = req.body;
     try {
@@ -71,14 +164,20 @@ const Login = async (req, res) => {
         if (exist) {
             const passwordMatch = await bcrypt.compare(Password, exist.Password);
             if (passwordMatch) {
-                let token = Create_token(exist._id);
-                res.cookie("Cookie", token, { httpOnly: true, maxAge: 999999 });
+                const token = Create_token(exist._id);
+                const refreshtoken = refresh_token(exist._id);
+                exist.Refreshtoken = refreshtoken;
+                await exist.save(); // Save the updated user with refresh token
+
+                res.cookie('Refresh', refreshtoken, { httpOnly: true, sameSite: 'strict' })
+                   .cookie('JWTToken', token, { httpOnly: true, sameSite: 'strict' });
+                
                 return res.status(200).json({
-                    "status": "success",
-                    "message": "Login successful",
-                    "data": {
-                        "Name": exist.Name,
-                        "PhoneNumber": exist.PhoneNumber
+                    status: "success",
+                    message: "Login successful",
+                    data: {
+                        Name: exist.Name,
+                        PhoneNumber: exist.PhoneNumber
                     }
                 });
             } else {
@@ -88,9 +187,48 @@ const Login = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
     } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
+};
+
+
+const Refresh_token = async (req, res) => {
+    try {
+        let refreshToken;
+        if (req.cookies && req.cookies.refreshToken) {
+            refreshToken = req.cookies.refreshToken;
+        } else if (req.body && req.body.Refresh) {
+            refreshToken = req.body.Refresh;
+        } else {
+            console.log("Refresh token not received");
+            return res.status(401).json({ message: "Refresh token not received" });
+        }
+
+        const decodedToken = JWT.verify(refreshToken, Rtoken);
+        
+        const user = await DataBase.findById(decodedToken?.id);
+        if (!user) {
+            return res.status(401).json({ message: "User not found" });
+        }
+        
+        if (refreshToken !== user.Refreshtoken) {
+            return res.status(401).json({ message: "Refresh token does not match" });
+        }
+        
+        const accessToken = Create_token(user._id);
+        const newRefreshToken = refresh_token(user._id);
+        
+        user.Refreshtoken = newRefreshToken;
+        await user.save();
+        
+        return res.status(200).json({ accessToken });
+    } catch (error) {
+        console.error(error);
         return res.status(400).json(error);
     }
 };
+
+
 
 const forgotpassword = async (req, res) => {
     const { Email, password, newpassword, againnewpassword } = req.body;
@@ -138,9 +276,10 @@ const Registration = async (req, res) => {
             const new_user = new DataBase({ Name, Password: hashpassword, PhoneNumber, Email, Address });
             const user = await new_user.save();
             Verifyemail(Email, user._id, Name);
-            return res.status(200).json({ password:hashpassword,
-                                          userID:user._id
-             });
+            return res.status(200).json({
+                password: hashpassword,
+                userID: user._id
+            });
         } else {
             return res.status(403).json({ message: "User already exists" });
         }
@@ -267,7 +406,7 @@ const addRoom = async (req, res) => {
             const room = new RoomDB({ Room_Name: RoomName, Home_id: Home_Id });
             await room.save(); // Save room to database
 
-// <<<<<<< HEAD
+            // <<<<<<< HEAD
             // Update home with new room
             home.Room_ID.push(room._id);
             await home.save();
@@ -276,13 +415,6 @@ const addRoom = async (req, res) => {
         else {
             return res.status(401).json({ Message: "user Email Not verified" })
         }
-
-        // Update home with new room
-        home.Room_ID.push(room._id);
-        await home.save();
-
-        return res.status(200).json(room._id);
-// >>>>>>> 8299e312b6b97f7d59e162961f489f6d804bdacd
     } catch (error) {
         console.log(error);
         return res.status(400).json(error);
@@ -293,7 +425,7 @@ const addRoom = async (req, res) => {
 
 const getUserData = async (req, res) => {
     const { Email } = req.body;
-
+    console.log(Email);
     try {
         const user = await DataBase.findOne({ Email })
             .populate({
@@ -312,7 +444,7 @@ const getUserData = async (req, res) => {
         return res.status(200).json(user);
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ error: "Internal server error" });
+        return res.status(500).json(err);
     }
 }
 
@@ -353,5 +485,5 @@ const addDevice = async (req, res) => {
 }
 
 
-module.exports = { Registration, Login, verify, Homecreate, addDevice, addRoom, Home_user, getUserData, reverify ,forgotpassword};
+module.exports = { Registration, Login, verify, Homecreate, addDevice, addRoom, kickuser,Home_user, getUserData, reverify, forgotpassword ,deleteHome,Refresh_token};
 

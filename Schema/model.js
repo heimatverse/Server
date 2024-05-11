@@ -13,7 +13,8 @@ const schema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Home_schema'
     },
-    Subscription: [String]
+    Subscription: [String],
+    Refreshtoken:{type:String}
 });
 
 const reg = mongoose.model('Heimatverse-data', schema);

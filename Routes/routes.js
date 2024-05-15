@@ -6,12 +6,12 @@ const { Registration,deleteHome, deleteRoom,kickuser,Login, verify ,Homecreate,g
 
 
 Routes.route("/Register").post(Registration);
-Routes.route("/addDevice").post(Authentication,addDevice);
+Routes.route("/addDevice").post(addDevice);
 Routes.route("/Homecreate").post(Homecreate);
 Routes.route("/deleteRoom").post(deleteRoom);
 Routes.route("/kickuser").post(kickuser);
 Routes.route("/deleteHome").post(deleteHome);
-Routes.route("/Home_user").post(Authentication,Home_user);
+Routes.route("/joinHome").post(Home_user);
 Routes.route("/addRoom").post(addRoom);
 Routes.route("/verify").get(verify);
 Routes.route("/forgotpassword").post(forgotpassword);

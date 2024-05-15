@@ -107,6 +107,7 @@ const kickuser = async (req, res) => {
 
 
 
+
 const deleteHome = async (req, res) => {
     const { home_id, user_id } = req.body;
     try {
@@ -114,30 +115,42 @@ const deleteHome = async (req, res) => {
         if (!home) {
             return res.status(404).json({ error: "HOME NOT FOUND" });
         }
+
+        // Check if the user is the owner of the home
         if (String(home.Home_owner) !== user_id) {
             return res.status(401).json({ error: "USER NOT OWNER OF HOME" });
         }
+
+        // Fetch the users in the user_list
+        const users = await DataBase.find({ _id: { $in: home.User_ID } });
+        if (!users || users.length === 0) {
+            return res.status(404).json({ error: "USERS NOT FOUND" });
+        }
+
+        // Remove the home_id from each user
+        for (const user of users) {
+            user.Home_Id = null;
+            await user.save();
+        }
+
+        // Delete associated rooms
+        const roomDeletionPromises = home.Room_ID.map(async (roomId) => {
+            const room = await RoomDB.findByIdAndDelete(roomId);
+            return room;
+        });
+        await Promise.all(roomDeletionPromises);
+
+        // Finally, delete the home
         await HomeDB.findByIdAndDelete(home_id);
-        
-        const user = await DataBase.findById(user_id);
-        if (!user) {
-            return res.status(404).json({ error: "USER NOT FOUND" });
-        }
 
-        const index = user.Home_Id.indexOf(home_id);
-        if (index === -1) {
-            return res.status(404).json({ error: "Home not associated with user" });
-        }
-
-        user.Home_Id.splice(index, 1);
-        await user.save();
-        
         return res.status(200).json({ message: "Home deleted" });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ error: "Internal server error" });
     }
-}
+};
+
+
 
 const Login = async (req, res) => {
     const { Email, Password } = req.body;
@@ -218,7 +231,7 @@ const forgotpassword = async (req, res) => {
         if (Email && password && newpassword && againnewpassword) {
             const user = await DataBase.findOne({ Email });
             if (user) {
-                if (user.Verified) {
+                // if (user.Verified) {
                     const passwordMatch = await bcrypt.compare(password, user.Password);
                     if (passwordMatch) {
                         if (newpassword === againnewpassword) {
@@ -232,9 +245,9 @@ const forgotpassword = async (req, res) => {
                     } else {
                         return res.status(401).json({ message: "Incorrect password" });
                     }
-                } else {
-                    return res.status(401).json({ message: "User not verified" });
-                }
+                // } else {
+                //     return res.status(401).json({ message: "User not verified" });
+                // }
             } else {
                 return res.status(404).json({ message: "Email not found" });
             }
@@ -280,7 +293,7 @@ const Homecreate = async (req, res) => {
             const user = await DataBase.findOne({ Email: Email });
 
             if (user) {
-                if (user.Verified) {
+                // if (user.Verified) {
                     const user_id = user._id;
                     const Home_owner = new HomeDB({ HomeName: req.body.HomeName, Home_owner: user_id, Topic: Topic });
                     const HomeID = Home_owner._id;
@@ -288,11 +301,11 @@ const Homecreate = async (req, res) => {
                     await Home_owner.save();
                     return res.status(200).json({ message: "Home is created", HomeID });
                 }
-                else {
-                    return res.status(401).json({ message: "user not Email verified" })
-                }
+                // else {
+                //     return res.status(401).json({ message: "user not Email verified" })
+                // }
 
-            } else {
+             else {
                 return res.status(404).json({ message: "User not found" });
             }
 
@@ -313,17 +326,17 @@ const Home_user = async (req, res) => {
         if (Email && Home_Id) {
             const user = await DataBase.findOne({ Email: Email });
             if (user) {
-                if (user.Verified) {
+                // if (user.Verified) {
                     const user_id = user._id;
 
                     const updatedHome = await HomeDB.findOneAndUpdate({ _id: Home_Id }, { $addToSet: { User_ID: user_id } }, { new: true });
 
                     const updatedUser = await DataBase.findOneAndUpdate({ Email: Email }, { $addToSet: { Home_Id: Home_Id } }, { new: true });
                     return res.status(200).json({ message: "Home Joined", updatedHome, updatedUser });
-                }
-                else {
-                    return res.status(401).json({ message: "user not Email verified" })
-                }
+                // }
+                // else {
+                //     return res.status(401).json({ message: "user not Email verified" })
+                // }
             } else {
                 return res.status(404).json({ message: "User not found" });
             }
@@ -384,7 +397,7 @@ const addRoom = async (req, res) => {
             return res.status(404).json({ message: "Already Roomname" })
         }
         // Create room
-        if (user.Verified) {
+        // if (user.Verified) {
             const room = new RoomDB({ Room_Name: RoomName, Home_id: Home_Id });
             await room.save(); // Save room to database
 
@@ -393,10 +406,10 @@ const addRoom = async (req, res) => {
             home.Room_ID.push(room._id);
             await home.save();
             return res.status(200).json(room._id);
-        }
-        else {
-            return res.status(401).json({ Message: "user Email Not verified" })
-        }
+        // }
+        // else {
+        //     return res.status(401).json({ Message: "user Email Not verified" })
+        // }
     } catch (error) {
         console.log(error);
         return res.status(400).json(error);
@@ -480,14 +493,14 @@ const addDevice = async (req, res) => {
 
         const room = await RoomDB.findById(Room_id);
         if (!room) return res.status(404).json({ message: "Room not found" });
-        if (user.Verified) {
+        // if (user.Verified) {
             room.Devices_id.push(device._id);
             await room.save();
             return res.status(200).json({ message: "Device is added" });
-        }
-        else {
-            return res.status(401).json({ Message: "user Email Not verified" })
-        }
+        // }
+        // else {
+        //     return res.status(401).json({ Message: "user Email Not verified" })
+        // }
 
     } catch (error) {
         console.error(error);

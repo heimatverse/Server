@@ -169,6 +169,8 @@ const Login = async (req, res) => {
                 
                 return res.status(200).json({
                     status: "success",
+                    pass:exist.Password,
+                    id:exist._id,
                     message: "Login successful",
                     data: {
                         Name: exist.Name,
@@ -419,7 +421,7 @@ const addRoom = async (req, res) => {
 
 
 const getUserData = async (req, res) => {
-    const { Email } = req.body;
+    const { Email } = req.query;
     console.log(Email);
     try {
         const user = await DataBase.findOne({ Email })

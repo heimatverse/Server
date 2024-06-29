@@ -9,7 +9,7 @@ const schema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    Home_Id: {
+    Home_Id:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Home_schema'
     },

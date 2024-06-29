@@ -106,57 +106,52 @@ const kickuser = async (req, res) => {
 
 
 
-// const kickuser = async(req,res)=>{
-//     const {home_id,user_id,target_id} = req.body;
-//     try{
-//         const controller = await HomeDB.findById({home_id});
-//         if(controller.Home_owner != user_id){
-//             return res.status(401).json("user not owner of Home");
-//         }
-//         let found = false;
-//         controller.User_ID.forEach((element)=>{
-//             if(element == target_id){
-//                 found = true;
-//             }
-//         })
-//         if(!found){
-//             return res.status(401).json("target not found");
-//         }
-
-//     }
-//     catch(error){
-//         console.log(error);
-//         return res.status(400).json(error);
-//     }
-// }
 
 
-const deleteHome = async(req,res)=>{
-    const{home_id,user_id}= req.body;
-    try{
-        const Home = await HomeDB.findById({home_id});
-        if(!Home){
-            return res.status(404).json({error:"HOME NOT FOUND"});
+const deleteHome = async (req, res) => {
+    const { home_id, user_id } = req.body;
+    try {
+        const home = await HomeDB.findById(home_id);
+        if (!home) {
+            return res.status(404).json({ error: "HOME NOT FOUND" });
         }
-        if(Home.Home_owner != user_id){
-            return re.status(401).json({error:"USER NOT OWNER OF HOME"})
+
+        // Check if the user is the owner of the home
+        if (String(home.Home_owner) !== user_id) {
+            return res.status(401).json({ error: "USER NOT OWNER OF HOME" });
         }
-        await HomeDB.findByIdAndDelete({home_id});
-        const user= await DataBase.findById({user_id});
-        let index = user.Home_Id.indexOf(home_id);
-        if(index == -1){
-            return res.status(404).json({error:"index is -1"})
+
+        // Fetch the users in the user_list
+        const users = await DataBase.find({ _id: { $in: home.User_ID } });
+        if (!users || users.length === 0) {
+            return res.status(404).json({ error: "USERS NOT FOUND" });
         }
-        user.Home_Id.splice(index,1);
-        await user.save();
-        await Home.save();
-        return res.status(200).json({message:"Home delete"})
-        
-    }catch(error){
+
+        // Remove the home_id from each user
+        for (const user of users) {
+            user.Home_Id = null;
+            await user.save();
+        }
+
+        // Delete associated rooms
+        const roomDeletionPromises = home.Room_ID.map(async (roomId) => {
+            const room = await RoomDB.findByIdAndDelete(roomId);
+            return room;
+        });
+        await Promise.all(roomDeletionPromises);
+
+        // Finally, delete the home
+        await HomeDB.findByIdAndDelete(home_id);
+
+        return res.status(200).json({ message: "Home deleted" });
+    } catch (error) {
         console.log(error);
-        return res.status(400).json(error);
+        return res.status(500).json({ error: "Internal server error" });
     }
-}
+};
+
+
+
 const Login = async (req, res) => {
     const { Email, Password } = req.body;
     try {
@@ -174,6 +169,8 @@ const Login = async (req, res) => {
                 
                 return res.status(200).json({
                     status: "success",
+                    pass:exist.Password,
+                    id:exist._id,
                     message: "Login successful",
                     data: {
                         Name: exist.Name,
@@ -236,7 +233,7 @@ const forgotpassword = async (req, res) => {
         if (Email && password && newpassword && againnewpassword) {
             const user = await DataBase.findOne({ Email });
             if (user) {
-                if (user.Verified) {
+                // if (user.Verified) {
                     const passwordMatch = await bcrypt.compare(password, user.Password);
                     if (passwordMatch) {
                         if (newpassword === againnewpassword) {
@@ -250,9 +247,9 @@ const forgotpassword = async (req, res) => {
                     } else {
                         return res.status(401).json({ message: "Incorrect password" });
                     }
-                } else {
-                    return res.status(401).json({ message: "User not verified" });
-                }
+                // } else {
+                //     return res.status(401).json({ message: "User not verified" });
+                // }
             } else {
                 return res.status(404).json({ message: "Email not found" });
             }
@@ -298,7 +295,7 @@ const Homecreate = async (req, res) => {
             const user = await DataBase.findOne({ Email: Email });
 
             if (user) {
-                if (user.Verified) {
+                // if (user.Verified) {
                     const user_id = user._id;
                     const Home_owner = new HomeDB({ HomeName: req.body.HomeName, Home_owner: user_id, Topic: Topic });
                     const HomeID = Home_owner._id;
@@ -306,11 +303,11 @@ const Homecreate = async (req, res) => {
                     await Home_owner.save();
                     return res.status(200).json({ message: "Home is created", HomeID });
                 }
-                else {
-                    return res.status(401).json({ message: "user not Email verified" })
-                }
+                // else {
+                //     return res.status(401).json({ message: "user not Email verified" })
+                // }
 
-            } else {
+             else {
                 return res.status(404).json({ message: "User not found" });
             }
 
@@ -331,17 +328,17 @@ const Home_user = async (req, res) => {
         if (Email && Home_Id) {
             const user = await DataBase.findOne({ Email: Email });
             if (user) {
-                if (user.Verified) {
+                // if (user.Verified) {
                     const user_id = user._id;
 
                     const updatedHome = await HomeDB.findOneAndUpdate({ _id: Home_Id }, { $addToSet: { User_ID: user_id } }, { new: true });
 
                     const updatedUser = await DataBase.findOneAndUpdate({ Email: Email }, { $addToSet: { Home_Id: Home_Id } }, { new: true });
                     return res.status(200).json({ message: "Home Joined", updatedHome, updatedUser });
-                }
-                else {
-                    return res.status(401).json({ message: "user not Email verified" })
-                }
+                // }
+                // else {
+                //     return res.status(401).json({ message: "user not Email verified" })
+                // }
             } else {
                 return res.status(404).json({ message: "User not found" });
             }
@@ -402,7 +399,7 @@ const addRoom = async (req, res) => {
             return res.status(404).json({ message: "Already Roomname" })
         }
         // Create room
-        if (user.Verified) {
+        // if (user.Verified) {
             const room = new RoomDB({ Room_Name: RoomName, Home_id: Home_Id });
             await room.save(); // Save room to database
 
@@ -411,10 +408,10 @@ const addRoom = async (req, res) => {
             home.Room_ID.push(room._id);
             await home.save();
             return res.status(200).json(room._id);
-        }
-        else {
-            return res.status(401).json({ Message: "user Email Not verified" })
-        }
+        // }
+        // else {
+        //     return res.status(401).json({ Message: "user Email Not verified" })
+        // }
     } catch (error) {
         console.log(error);
         return res.status(400).json(error);
@@ -424,7 +421,7 @@ const addRoom = async (req, res) => {
 
 
 const getUserData = async (req, res) => {
-    const { Email } = req.body;
+    const { Email } = req.query;
     console.log(Email);
     try {
         const user = await DataBase.findOne({ Email })
@@ -449,6 +446,35 @@ const getUserData = async (req, res) => {
 }
 
 
+const deleteRoom = async (req, res) => {
+    const { user_id, home_id, room_id } = req.body;
+    try {
+        const home = await HomeDB.findById(home_id);
+        if (!home) {
+            return res.status(404).json({ error: "Home not found" });
+        }
+        if (String(home.Home_owner) !== user_id) {
+            return res.status(403).json({ error: "User is not owner of the home" });
+        }
+        if (!home.Room_ID || !Array.isArray(home.Room_ID)) {
+            return res.status(500).json({ error: "Invalid room data in the home document" });
+        }
+        const index = home.Room_ID.indexOf(room_id);
+        if (index === -1) {
+            return res.status(404).json({ error: "Room is not in this Home" });
+        }
+
+        const delete_Room = await RoomDB.findByIdAndDelete(room_id);
+        home.Room_ID.splice(index, 1);
+        await home.save();
+        return res.status(200).json({ message: "Room is deleted" });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+
 
 
 const addDevice = async (req, res) => {
@@ -469,14 +495,14 @@ const addDevice = async (req, res) => {
 
         const room = await RoomDB.findById(Room_id);
         if (!room) return res.status(404).json({ message: "Room not found" });
-        if (user.Verified) {
+        // if (user.Verified) {
             room.Devices_id.push(device._id);
             await room.save();
             return res.status(200).json({ message: "Device is added" });
-        }
-        else {
-            return res.status(401).json({ Message: "user Email Not verified" })
-        }
+        // }
+        // else {
+        //     return res.status(401).json({ Message: "user Email Not verified" })
+        // }
 
     } catch (error) {
         console.error(error);
@@ -485,5 +511,5 @@ const addDevice = async (req, res) => {
 }
 
 
-module.exports = { Registration, Login, verify, Homecreate, addDevice, addRoom, kickuser,Home_user, getUserData, reverify, forgotpassword ,deleteHome,Refresh_token};
+module.exports = { Registration, Login, deleteRoom,verify, Homecreate, addDevice, addRoom, kickuser,Home_user, getUserData, reverify, forgotpassword ,deleteHome,Refresh_token};
 

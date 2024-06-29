@@ -12,6 +12,7 @@ on:
 
 jobs:
   node_build:
+    name: Setup and Install Node.js
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
@@ -53,7 +54,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   update_ssh_linode:
-    name: Telling Linode Server to Update
+    name: Updating linode server with latest image
     needs: "push_to_registry"
     runs-on: ubuntu-latest
 

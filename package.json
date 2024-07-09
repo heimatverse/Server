@@ -11,20 +11,20 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "aedes": "^0.51.0",
+    "aedes": "^0.51.2",
     "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
-    "ejs": "^3.1.9",
+    "ejs": "^3.1.10",
     "express": "^4.19.2",
     "http": "^0.0.1-security",
     "httq": "^0.8.3",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.3.3",
+    "mongoose": "^8.5.0",
     "mosca": "^2.8.3",
-    "mqtt": "^5.5.5",
+    "mqtt": "^5.8.0",
     "net": "^1.0.2",
-    "nodemailer": "^6.9.13",
-    "nodemon": "^3.1.0",
+    "nodemailer": "^6.9.14",
+    "nodemon": "^3.1.4",
     "websocket-stream": "^5.5.2"
   }
 }

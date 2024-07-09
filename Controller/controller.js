@@ -272,7 +272,7 @@ const Registration = async (req, res) => {
             const hashpassword = await bcrypt.hash(Password, 10);
             const new_user = new DataBase({ Name, Password: hashpassword, PhoneNumber, Email, Address });
             const user = await new_user.save();
-            Verifyemail(Email, user._id, Name);
+            // Verifyemail(Email, user._id, Name);
             return res.status(200).json({
                 password: hashpassword,
                 userID: user._id
@@ -290,13 +290,16 @@ const Registration = async (req, res) => {
 const Homecreate = async (req, res) => {
     const { Email, HomeName } = req.body;
     const Topic = Math.floor(100000000000 + Math.random() * 900000000000);
+    console.log(Email)
     try {
+        
         if (Email && HomeName) {
             const user = await DataBase.findOne({ Email: Email });
 
             if (user) {
                 // if (user.Verified) {
                     const user_id = user._id;
+                    console.log(user_id)
                     const Home_owner = new HomeDB({ HomeName: req.body.HomeName, Home_owner: user_id, Topic: Topic });
                     const HomeID = Home_owner._id;
                     const update_user = await DataBase.findOneAndUpdate({ Email }, { $addToSet: { Home_Id: HomeID } });
@@ -335,10 +338,7 @@ const Home_user = async (req, res) => {
 
                     const updatedUser = await DataBase.findOneAndUpdate({ Email: Email }, { $addToSet: { Home_Id: Home_Id } }, { new: true });
                     return res.status(200).json({ message: "Home Joined", updatedHome, updatedUser });
-                // }
-                // else {
-                //     return res.status(401).json({ message: "user not Email verified" })
-                // }
+                
             } else {
                 return res.status(404).json({ message: "User not found" });
             }
@@ -407,7 +407,7 @@ const addRoom = async (req, res) => {
             // Update home with new room
             home.Room_ID.push(room._id);
             await home.save();
-            return res.status(200).json(room._id);
+            return res.status(200).json({message:"room is added",roomID:room._id});
         // }
         // else {
         //     return res.status(401).json({ Message: "user Email Not verified" })
@@ -434,7 +434,7 @@ const getUserData = async (req, res) => {
                     }
                 }
             });
-
+            console.log(user.Home_Id)
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
@@ -498,11 +498,8 @@ const addDevice = async (req, res) => {
         // if (user.Verified) {
             room.Devices_id.push(device._id);
             await room.save();
-            return res.status(200).json({ message: "Device is added" });
-        // }
-        // else {
-        //     return res.status(401).json({ Message: "user Email Not verified" })
-        // }
+            return res.status(200).json({ message: "device is added", deviceID:device._id});
+
 
     } catch (error) {
         console.error(error);
@@ -511,5 +508,147 @@ const addDevice = async (req, res) => {
 }
 
 
-module.exports = { Registration, Login, deleteRoom,verify, Homecreate, addDevice, addRoom, kickuser,Home_user, getUserData, reverify, forgotpassword ,deleteHome,Refresh_token};
+const updateuserdata = async (req, res) => {
+    const { phonenumber, Address, name, email } = req.body;
+    try {
+        const user = await DataBase.findOne({ Email: email });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (phonenumber) user.PhoneNumber = phonenumber;
+        if (Address) user.Address = Address;
+        if (name) user.Name = name;
+
+        await user.save();
+        return res.status(200).json({ message: 'User updated successfully', user });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(error);
+    }
+};
+
+
+const deleteDevice = async (req, res) => {
+    const { device_id, Email, home_id, Room_id } = req.body;
+    try {
+        const user = await DataBase.findOne({ Email: Email });
+        if (!user) return res.status(400).json({ message: "User not found" });
+
+        const home = await HomeDB.findOne({ _id: home_id, Home_owner: user._id, Room_ID: Room_id });
+        if (!home) return res.status(404).json({ message: "User is not the owner of the Home or Home not found" });
+
+        const device = await DeviceDB.findById(device_id);
+        if (!device) {
+            return res.status(400).json({ message: "Device not found" });
+        }
+
+        // Remove device
+        await DeviceDB.findByIdAndDelete(device_id);
+
+        // Update the room to remove the reference to the device
+        await RoomDB.findByIdAndUpdate(Room_id, { $pull: { Devices: device_id } });
+
+        return res.status(200).json({ message: "Device deleted successfully" });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(error);
+    }
+};
+
+
+const updateroom = async (req, res) => {
+    const { newroomname, room_id, email } = req.body;
+    try {
+        // Find the user by email
+        const user = await DataBase.findOne({ Email: email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Find the room by ID
+        const room = await RoomDB.findById(room_id);
+        if (!room) {
+            return res.status(404).json({ message: "Room not found" });
+        }
+
+        // Find the home by ID
+        const home = await HomeDB.findById(room.Home_id);
+        if (!home) {
+            return res.status(404).json({ message: "Home not found" });
+        }
+
+        // Check if the user is the home owner
+        if (home.Home_owner.toString() === user._id.toString()) {
+            if (newroomname) {
+                room.Room_Name = newroomname;
+                await room.save();
+                return res.status(200).json({ message: "Room name updated successfully" });
+            } else {
+                return res.status(400).json({ message: "Provide new room name" });
+            }
+        } else {
+            return res.status(403).json({ message: "User is not the home owner" });
+        }
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Server error", error });
+    }
+};
+
+
+const updateDevice = async (req, res) => {
+    const { devicenewname, email, deviceid, roomid } = req.body;
+    try {
+        // Find the user by email
+        const user = await DataBase.findOne({ Email: email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Find the room by ID
+        const room = await RoomDB.findById(roomid);
+        if (!room) {
+            return res.status(404).json({ message: "Room not found" });
+        }
+
+        // Find the home by ID
+        const home = await HomeDB.findById(room.Home_id);
+        if (!home) {
+            return res.status(404).json({ message: "Home not found" });
+        }
+
+        // Check if the user is the home owner
+        if (home.Home_owner.toString() === user._id.toString()) {
+            // Find the device by ID
+            const device = await DeviceDB.findById(deviceid);
+            if (!device) {
+                return res.status(404).json({ message: "Device not found" });
+            }
+
+            // Check if the device belongs to the specified room
+            if (device.Room_id.toString() !== roomid) {
+                return res.status(400).json({ message: "Device does not belong to the specified room" });
+            }
+
+            // Update the device name
+            if (devicenewname) {
+                device.Device_name = devicenewname;
+                await device.save();
+                return res.status(200).json({ message: "Device name updated successfully" });
+            } else {
+                return res.status(400).json({ message: "Provide new device name" });
+            }
+        } else {
+            return res.status(403).json({ message: "User is not the home owner" });
+        }
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Server error", error });
+    }
+};
+
+
+
+module.exports = { Registration, Login, deleteRoom,verify, Homecreate,deleteDevice, addDevice, addRoom, kickuser,Home_user,updateDevice,updateroom,getUserData, reverify,updateuserdata, forgotpassword ,deleteHome,Refresh_token};
 

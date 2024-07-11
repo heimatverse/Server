@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const DataBase = require("../Schema/model");
 const RoomDB = require("../Schema/Room");
 const DeviceDB = require("../Schema/Device");
+const NodeDB = require("../Schema/Node.js");
 const HomeDB = require("../Schema/Home")
 const JWT = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
@@ -648,7 +649,57 @@ const updateDevice = async (req, res) => {
     }
 };
 
+const Addnode = async (req, res) => {
+    const { Email, RoomID, HomeID, DeviceID, NodeType, NodeName, NodeIcon } = req.body;
+
+    if (!Email || !RoomID || !HomeID || !DeviceID || !NodeType || !NodeName || !NodeIcon) {
+        return res.status(400).json({ message: "Provide Email, RoomID, HomeID, DeviceID, NodeType, NodeName, NodeIcon" });
+    }
+
+    try {
+        const user = await DataBase.findOne({ Email });
+        if (!user) return res.status(400).json({ message: "Email not found" });
+
+        const home = await HomeDB.findById(HomeID);
+        if (!home) return res.status(400).json({ message: "Home not found" });
+        // if (user._id != home.Home_owner) return res.status(400).json({ message: "User is not the owner of this home" });
+
+        const home_ = await HomeDB.findOne({ _id: HomeID, Home_owner: user._id, Room_ID: RoomID });
+        if (!home_) return res.status(404).json({ message: "User is not the owner of the Home" });
+
+        const room = await RoomDB.findById(RoomID);
+        if (!room) return res.status(400).json({ message: "Room not found" });
+        if (HomeID != room.Home_id) return res.status(400).json({ message: "This room is not in this home" });
+
+        const device = await DeviceDB.findById(DeviceID);
+        if (!device) return res.status(400).json({ message: "Device not found" });
+        // if (device.Room_id != room._id) return res.status(400).json({ message: "This device is not in this room" });
+       
+        const Device_in_room = await DeviceDB.findOne({ Device_name: device.Device_name, Room_id: RoomID });
+        if (!Device_in_room) {
+            return res.status(400).json({ Messaage: "This device is not in this room" });
+        }
+        
+        
 
 
-module.exports = { Registration, Login, deleteRoom,verify, Homecreate,deleteDevice, addDevice, addRoom, kickuser,Home_user,updateDevice,updateroom,getUserData, reverify,updateuserdata, forgotpassword ,deleteHome,Refresh_token};
+        const node_in_device = await NodeDB.findOne({Name:NodeName,Device_id: DeviceID})
+        if(node_in_device){
+            return res.status(400).json({message:"thus named node is already in this device"})
+        }
+        const node = new NodeDB({ type: NodeType, Name: NodeName, Icon: NodeIcon, Device_id: DeviceID });
+        await node.save();
+
+        device.Node_id.push(node._id);
+        await device.save();
+
+        return res.status(200).json({ message: "Node added", node__id: node._id });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+
+module.exports = { Registration, Login, Addnode ,deleteRoom,verify, Homecreate,deleteDevice, addDevice, addRoom, kickuser,Home_user,updateDevice,updateroom,getUserData, reverify,updateuserdata, forgotpassword ,deleteHome,Refresh_token};
 

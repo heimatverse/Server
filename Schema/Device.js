@@ -5,7 +5,11 @@ const DeviceSchema = new mongoose.Schema({
     Room_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Room-data'
-    }
+    },
+    Node_id:[{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Node-data'
+    }]
     
 });
 

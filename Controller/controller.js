@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const DataBase = require("../Schema/model");
+const DataBase = require("../Schema/model1");
 const RoomDB = require("../Schema/Room");
 const DeviceDB = require("../Schema/Device");
 const NodeDB = require("../Schema/Node.js");
@@ -109,8 +109,57 @@ const kickuser = async (req, res) => {
 
 
 
+// const deleteHome = async (req, res) => {
+//     const { home_id, user_id } = req.body;
+//     console.log(home_id);
+//     try {
+//         const home = await HomeDB.findById(home_id);
+//         if (!home) {
+//             return res.status(404).json({ error: "HOME NOT FOUND" });
+//         }
+
+//         // Check if the user is the owner of the home
+//         if (home.Home_owner != user_id ) {
+//             return res.status(401).json({ error: "USER NOT OWNER OF HOME" });
+//         }
+
+//         // Fetch the users in the user_list
+//         // const users = await DataBase.find({ _id: { $in: home.User_ID } });
+//         // if (!users || users.length === 0) {
+//         //     return res.status(404).json({ error: "USERS NOT FOUND" });
+//         // }
+//         const userss = await DataBase.findById(user_id);
+//         if(!userss){
+//             return res.status(404).json({message:"user not found"})
+//         }
+//         userss.Home_Id = null;
+//         const users = await DataBase.find({ _id: { $in: home.home_id } });
+//         //Remove the home_id from each user
+//         for (const user of users) {
+//             user.Home_Id = null;
+//             await user.save();
+//         }
+
+//         // Delete associated rooms
+//         const roomDeletionPromises = home.Room_ID.map(async (roomId) => {
+//             const room = await RoomDB.findByIdAndDelete(roomId);
+//             return room;
+//         });
+//         await Promise.all(roomDeletionPromises);
+
+//         // Finally, delete the home
+//         await HomeDB.findByIdAndDelete(home_id);
+
+//         return res.status(200).json({ message: "Home deleted" });
+//     } catch (error) {
+//         console.log(error);
+//         return res.status(500).json({ error: "Internal server error" });
+//     }
+// };
+
 const deleteHome = async (req, res) => {
     const { home_id, user_id } = req.body;
+    // console.log(home_id);
     try {
         const home = await HomeDB.findById(home_id);
         if (!home) {
@@ -118,26 +167,23 @@ const deleteHome = async (req, res) => {
         }
 
         // Check if the user is the owner of the home
-        if (String(home.Home_owner) !== user_id) {
+        if (home.Home_owner.toString() !== user_id) {
             return res.status(401).json({ error: "USER NOT OWNER OF HOME" });
         }
 
-        // Fetch the users in the user_list
-        const users = await DataBase.find({ _id: { $in: home.User_ID } });
-        if (!users || users.length === 0) {
-            return res.status(404).json({ error: "USERS NOT FOUND" });
-        }
-
+        // Fetch users associated with the home
+        const users = await HomeDB.User_ID;
+        console.log("here is users of home owner of hahah")
+        console.log(users);
         // Remove the home_id from each user
         for (const user of users) {
-            user.Home_Id = null;
-            await user.save();
-        }
+                        user.Home_Id = null;
+                       await user.save();
+                  }
 
         // Delete associated rooms
         const roomDeletionPromises = home.Room_ID.map(async (roomId) => {
-            const room = await RoomDB.findByIdAndDelete(roomId);
-            return room;
+            await RoomDB.findByIdAndDelete(roomId);
         });
         await Promise.all(roomDeletionPromises);
 
@@ -150,6 +196,7 @@ const deleteHome = async (req, res) => {
         return res.status(500).json({ error: "Internal server error" });
     }
 };
+
 
 
 
@@ -288,42 +335,88 @@ const Registration = async (req, res) => {
 
 
 
+// const Homecreate = async (req, res) => {
+//     const { Email, HomeName } = req.body;
+//     const Topic = (Math.floor(100000000000 + Math.random() * 900000000000)).toString();
+    
+//     console.log(Email);
+    
+//     if (!Email || !HomeName) {
+//         return res.status(400).json({ message: "Provide Email or HomeName" });
+//     }
+
+//     try {
+//         const user = await DataBase.findOne({ Email });
+
+//         if (!user) {
+//             return res.status(404).json({ message: "User not found" });
+//         }
+
+//         const user_id = user._id;
+//         console.log(user_id);
+
+//         const Home_owner = new HomeDB({ HomeName, Home_owner: user_id, Topic });
+
+//         await Home_owner.save();
+
+//         if(user.Home_Id != null){
+//             return res.status(400).json({message:"user already have home"})
+//         }
+
+//         const HomeID = Home_owner._id;
+//         await DataBase.findOneAndUpdate({ Email }, { Home_Id: HomeID });
+        
+
+//         return res.status(200).json({ message: "Home is created", HomeID });
+//     } catch (error) {
+//         console.log(error);
+//         return res.status(500).json({ message: "Internal server error" });
+//     }
+// };
+
 const Homecreate = async (req, res) => {
     const { Email, HomeName } = req.body;
-    const Topic = Math.floor(100000000000 + Math.random() * 900000000000);
-    console.log(Email)
+    const Topic = (Math.floor(100000000000 + Math.random() * 900000000000)).toString();
+    
+    console.log(Email);
+    
+    if (!Email || !HomeName) {
+        return res.status(400).json({ message: "Provide Email or HomeName" });
+    }
+
     try {
-        
-        if (Email && HomeName) {
-            const user = await DataBase.findOne({ Email: Email });
+        const user = await DataBase.findOne({ Email });
 
-            if (user) {
-                // if (user.Verified) {
-                    const user_id = user._id;
-                    console.log(user_id)
-                    const Home_owner = new HomeDB({ HomeName: req.body.HomeName, Home_owner: user_id, Topic: Topic });
-                    const HomeID = Home_owner._id;
-                    const update_user = await DataBase.findOneAndUpdate({ Email }, { $addToSet: { Home_Id: HomeID } });
-                    await Home_owner.save();
-                    return res.status(200).json({ message: "Home is created", HomeID });
-                }
-                // else {
-                //     return res.status(401).json({ message: "user not Email verified" })
-                // }
-
-             else {
-                return res.status(404).json({ message: "User not found" });
-            }
-
-
-        } else {
-            return res.status(400).json({ message: "Provide Email or HomeName" });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
         }
+
+        if (user.Home_Id != null) {
+            return res.status(400).json({ message: "User already has a home" });
+        }
+
+        const user_id = user._id;
+        console.log(user_id);
+
+        const Home_owner = new HomeDB({ 
+            HomeName, 
+            Home_owner: user_id, 
+            Topic, 
+            User_ID: [user_id] // Add the user_id to the User_ID array
+        });
+
+        await Home_owner.save();
+
+        const HomeID = Home_owner._id;
+        await DataBase.findOneAndUpdate({ Email }, { Home_Id: HomeID });
+
+        return res.status(200).json({ message: "Home is created", HomeID });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal server error" });
     }
-}
+};
+
 
 
 const Home_user = async (req, res) => {
@@ -454,7 +547,7 @@ const deleteRoom = async (req, res) => {
         if (!home) {
             return res.status(404).json({ error: "Home not found" });
         }
-        if (String(home.Home_owner) !== user_id) {
+        if (String(home.Home_owner) != user_id) {
             return res.status(403).json({ error: "User is not owner of the home" });
         }
         if (!home.Room_ID || !Array.isArray(home.Room_ID)) {

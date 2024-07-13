@@ -11,11 +11,12 @@ const schema = new mongoose.Schema({
     },
     Home_Id:{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Home_schema'
+        ref: 'Home_schema',
+        default:null
     },
     Subscription: [String],
     Refreshtoken:{type:String}
 });
 
-const reg = mongoose.model('Heimatverse-data', schema);
+const reg = mongoose.model('new_Heimatverse-data', schema);
 module.exports = reg;

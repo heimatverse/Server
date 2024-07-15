@@ -159,7 +159,6 @@ const kickuser = async (req, res) => {
 
 const deleteHome = async (req, res) => {
     const { home_id, user_id } = req.body;
-    // console.log(home_id);
     try {
         const home = await HomeDB.findById(home_id);
         if (!home) {
@@ -172,14 +171,14 @@ const deleteHome = async (req, res) => {
         }
 
         // Fetch users associated with the home
-        const users = await HomeDB.User_ID;
-        console.log("here is users of home owner of hahah")
-        console.log(users);
+        const users = await DataBase.find({ _id: { $in: home.User_ID } });
+        console.log("Users associated with the home:", users);
+
         // Remove the home_id from each user
-        for (const user of users) {
-                        user.Home_Id = null;
-                       await user.save();
-                  }
+        const userUpdatePromises = users.map(async (user) => {
+            await DataBase.findByIdAndUpdate(user._id, { Home_Id: null });
+        });
+        await Promise.all(userUpdatePromises);
 
         // Delete associated rooms
         const roomDeletionPromises = home.Room_ID.map(async (roomId) => {
@@ -196,6 +195,7 @@ const deleteHome = async (req, res) => {
         return res.status(500).json({ error: "Internal server error" });
     }
 };
+
 
 
 
@@ -335,44 +335,6 @@ const Registration = async (req, res) => {
 
 
 
-// const Homecreate = async (req, res) => {
-//     const { Email, HomeName } = req.body;
-//     const Topic = (Math.floor(100000000000 + Math.random() * 900000000000)).toString();
-    
-//     console.log(Email);
-    
-//     if (!Email || !HomeName) {
-//         return res.status(400).json({ message: "Provide Email or HomeName" });
-//     }
-
-//     try {
-//         const user = await DataBase.findOne({ Email });
-
-//         if (!user) {
-//             return res.status(404).json({ message: "User not found" });
-//         }
-
-//         const user_id = user._id;
-//         console.log(user_id);
-
-//         const Home_owner = new HomeDB({ HomeName, Home_owner: user_id, Topic });
-
-//         await Home_owner.save();
-
-//         if(user.Home_Id != null){
-//             return res.status(400).json({message:"user already have home"})
-//         }
-
-//         const HomeID = Home_owner._id;
-//         await DataBase.findOneAndUpdate({ Email }, { Home_Id: HomeID });
-        
-
-//         return res.status(200).json({ message: "Home is created", HomeID });
-//     } catch (error) {
-//         console.log(error);
-//         return res.status(500).json({ message: "Internal server error" });
-//     }
-// };
 
 const Homecreate = async (req, res) => {
     const { Email, HomeName } = req.body;
@@ -430,7 +392,7 @@ const Home_user = async (req, res) => {
 
                     const updatedHome = await HomeDB.findOneAndUpdate({ _id: Home_Id }, { $addToSet: { User_ID: user_id } }, { new: true });
 
-                    const updatedUser = await DataBase.findOneAndUpdate({ Email: Email }, { $addToSet: { Home_Id: Home_Id } }, { new: true });
+                    const updatedUser = await DataBase.findOneAndUpdate({ Email: Email }, { Home_Id: Home_Id } , { new: true });
                     return res.status(200).json({ message: "Home Joined", updatedHome, updatedUser });
                 
             } else {

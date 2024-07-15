@@ -430,11 +430,6 @@ const verify = async (req, res) => {
 
 
 
-
-
-//add room if id not correct i got
-
-
 const addRoom = async (req, res) => {
     const { Email, RoomName, Home_Id } = req.body;
 
@@ -442,6 +437,7 @@ const addRoom = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(Home_Id)) {
             return res.status(400).json({ message: "Invalid Home_Id" });
         }
+
         // Find the user
         const user = await DataBase.findOne({ Email: Email });
         if (!user) return res.status(400).json({ message: "User not found" });
@@ -450,29 +446,31 @@ const addRoom = async (req, res) => {
         const home = await HomeDB.findOne({ _id: Home_Id, Home_owner: user._id });
         if (!home) return res.status(404).json({ message: "User is not the owner of the Home or Home not found" });
 
-        const Same_roomname = await RoomDB.findOne({ Room_Name: RoomName, Home_id: Home_Id })
-        if (Same_roomname) {
-            return res.status(404).json({ message: "Already Roomname" })
+        const sameRoomName = await RoomDB.findOne({ Room_Name: RoomName, Home_id: Home_Id });
+        if (sameRoomName) {
+            return res.status(404).json({ message: "Room name already exists" });
         }
-        // Create room
-        // if (user.Verified) {
-            const room = new RoomDB({ Room_Name: RoomName, Home_id: Home_Id });
-            await room.save(); // Save room to database
 
-            // <<<<<<< HEAD
-            // Update home with new room
-            home.Room_ID.push(room._id);
-            await home.save();
-            return res.status(200).json({message:"room is added",roomID:room._id});
-        // }
-        // else {
-        //     return res.status(401).json({ Message: "user Email Not verified" })
-        // }
+        // Create room
+        const room = new RoomDB({ Room_Name: RoomName, Home_id: Home_Id });
+        await room.save(); // Save room to database
+
+        // Update room name to include room ID
+        const updatedRoomName = `${room._id}_${RoomName}`;
+        room.Room_Name = updatedRoomName;
+        await room.save();
+
+        // Update home with new room
+        home.Room_ID.push(room._id);
+        await home.save();
+
+        return res.status(200).json({ message: "Room is added", roomID: room._id });
     } catch (error) {
         console.log(error);
         return res.status(400).json(error);
     }
-}
+};
+
 
 
 
@@ -587,6 +585,10 @@ const updateuserdata = async (req, res) => {
 
 const deleteDevice = async (req, res) => {
     const { device_id, Email, home_id, Room_id } = req.body;
+    console.log(home_id)
+    console.log(device_id)
+    console.log(Room_id)
+    console.log(Email)
     try {
         const user = await DataBase.findOne({ Email: Email });
         if (!user) return res.status(400).json({ message: "User not found" });
@@ -734,10 +736,6 @@ const Addnode = async (req, res) => {
         if (!Device_in_room) {
             return res.status(400).json({ Messaage: "This device is not in this room" });
         }
-        
-        
-
-
         const node_in_device = await NodeDB.findOne({Name:NodeName,Device_id: DeviceID})
         if(node_in_device){
             return res.status(400).json({message:"thus named node is already in this device"})

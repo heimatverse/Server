@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const HomeSchema = new mongoose.Schema({
     Home_owner: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Heimatverse-data'
+        ref: 'new_Heimatverse-data'
     },
     HomeName: {
         type: String,
@@ -14,11 +14,11 @@ const HomeSchema = new mongoose.Schema({
     },
     Admin_ID: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Heimatverse-data'
+        ref: 'new_Heimatverse-data'
     }],
     User_ID: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Heimatverse-data'
+        ref: 'new_Heimatverse-data'
     }],
     Room_ID: [{
         type: mongoose.Schema.Types.ObjectId,

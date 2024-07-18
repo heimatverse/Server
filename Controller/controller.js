@@ -107,56 +107,6 @@ const kickuser = async (req, res) => {
 
 
 
-
-
-// const deleteHome = async (req, res) => {
-//     const { home_id, user_id } = req.body;
-//     console.log(home_id);
-//     try {
-//         const home = await HomeDB.findById(home_id);
-//         if (!home) {
-//             return res.status(404).json({ error: "HOME NOT FOUND" });
-//         }
-
-//         // Check if the user is the owner of the home
-//         if (home.Home_owner != user_id ) {
-//             return res.status(401).json({ error: "USER NOT OWNER OF HOME" });
-//         }
-
-//         // Fetch the users in the user_list
-//         // const users = await DataBase.find({ _id: { $in: home.User_ID } });
-//         // if (!users || users.length === 0) {
-//         //     return res.status(404).json({ error: "USERS NOT FOUND" });
-//         // }
-//         const userss = await DataBase.findById(user_id);
-//         if(!userss){
-//             return res.status(404).json({message:"user not found"})
-//         }
-//         userss.Home_Id = null;
-//         const users = await DataBase.find({ _id: { $in: home.home_id } });
-//         //Remove the home_id from each user
-//         for (const user of users) {
-//             user.Home_Id = null;
-//             await user.save();
-//         }
-
-//         // Delete associated rooms
-//         const roomDeletionPromises = home.Room_ID.map(async (roomId) => {
-//             const room = await RoomDB.findByIdAndDelete(roomId);
-//             return room;
-//         });
-//         await Promise.all(roomDeletionPromises);
-
-//         // Finally, delete the home
-//         await HomeDB.findByIdAndDelete(home_id);
-
-//         return res.status(200).json({ message: "Home deleted" });
-//     } catch (error) {
-//         console.log(error);
-//         return res.status(500).json({ error: "Internal server error" });
-//     }
-// };
-
 const deleteHome = async (req, res) => {
     const { home_id, user_id } = req.body;
     try {
@@ -166,7 +116,7 @@ const deleteHome = async (req, res) => {
         }
 
         // Check if the user is the owner of the home
-        if (home.User_ID._id != user_id) {
+        if  (home.Home_owner.toString() !== user_id) {
             return res.status(401).json({ error: "USER NOT OWNER OF HOME" });
         }
 
@@ -178,7 +128,7 @@ const deleteHome = async (req, res) => {
         const userUpdatePromises = users.map(async (user) => {
             await DataBase.findByIdAndUpdate(user._id, { Home_Id: null });
         });
-        await Promise.all(userUpdatePromises);
+        await Promise.all(userUpdatePromises);  
 
         // Delete associated rooms
         const roomDeletionPromises = home.Room_ID.map(async (roomId) => {
@@ -195,8 +145,6 @@ const deleteHome = async (req, res) => {
         return res.status(500).json({ error: "Internal server error" });
     }
 };
-
-
 
 
 

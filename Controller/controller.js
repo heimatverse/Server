@@ -4,6 +4,7 @@ const RoomDB = require("../Schema/Room");
 const DeviceDB = require("../Schema/Device");
 const NodeDB = require("../Schema/Node.js");
 const HomeDB = require("../Schema/Home")
+const JoinModel = require("../Schema/JoinModel.js")
 const JWT = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const jwtSecret = 'FallbackSecretKey';
@@ -329,19 +330,24 @@ const Homecreate = async (req, res) => {
 
 
 
-const Home_user = async (req, res) => {
-    const { Email, Home_Id } = req.body;
+const Join_Home = async (req, res) => {
+    const { user_Id, Home_Id } = req.body;
+
     try {
-        if (Email && Home_Id) {
-            const user = await DataBase.findOne({ Email: Email });
+        if (user_Id && Home_Id) {
+            const user = await DataBase.findById(user_Id);
+            const homeName = await HomeDB.findById(Home_Id)
             if (user) {
                 // if (user.Verified) {
-                    const user_id = user._id;
+                    const join = new JoinModel({
+                        homeID: Home_Id,
+                        Home_Name: homeName.HomeName,
+                    })
+                    await join.save()
+                    const updateuser = await DataBase.findOneAndUpdate({ _id: user_Id }, { $addToSet: { Join_ID: join._id } }, { new: true });
 
-                    const updatedHome = await HomeDB.findOneAndUpdate({ _id: Home_Id }, { $addToSet: { User_ID: user_id } }, { new: true });
-
-                    const updatedUser = await DataBase.findOneAndUpdate({ Email: Email }, { Home_Id: Home_Id } , { new: true });
-                    return res.status(200).json({ message: "Home Joined", updatedHome, updatedUser });
+                    const updatehome = await HomeDB.findOneAndUpdate({_id:Home_Id},{ $addToSet: { User_ID:user_Id } }  , { new: true });
+                    return res.status(200).json({ message: "Home Joined", updatehome, updateuser });
                 
             } else {
                 return res.status(404).json({ message: "User not found" });
@@ -702,5 +708,5 @@ const Addnode = async (req, res) => {
 };
 
 
-module.exports = { Registration, Login, Addnode ,deleteRoom,verify, Homecreate,deleteDevice, addDevice, addRoom, kickuser,Home_user,updateDevice,updateroom,getUserData, reverify,updateuserdata, forgotpassword ,deleteHome,Refresh_token};
+module.exports = { Registration, Login, Addnode ,deleteRoom,verify, Homecreate,deleteDevice, addDevice, addRoom, kickuser,Join_Home,updateDevice,updateroom,getUserData, reverify,updateuserdata, forgotpassword ,deleteHome,Refresh_token};
 

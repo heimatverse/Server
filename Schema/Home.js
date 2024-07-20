@@ -26,7 +26,11 @@ const HomeSchema = new mongoose.Schema({
     }],
     SS_id: [{
         type: String
-    }]
+    }],
+    // Join_ID: [{
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'Join_Schema'
+    // }]
 });
 
 // Create model from HomeSchema

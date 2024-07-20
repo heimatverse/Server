@@ -15,7 +15,11 @@ const schema = new mongoose.Schema({
         default:null
     },
     Subscription: [String],
-    Refreshtoken:{type:String}
+    Refreshtoken:{type:String},
+    Join_ID: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Join_Schema'
+    }]
 });
 
 const reg = mongoose.model('new_Heimatverse-data', schema);

@@ -1,11 +1,7 @@
 const express = require("express");
 const Routes = express.Router();
 const {Authentication} = require("../Middleware/JWT")
-<<<<<<< HEAD
-const { Registration,deleteHome,updateDevice,getHomedata,Addnode,updateroom ,updateuserdata ,deleteRoom,kickuser,Login,deleteDevice, verify ,Homecreate,getUserData,addDevice,addRoom,Home_user,reverify,forgotpassword,Refresh_token} = require("../Controller/controller");
-=======
-const { Registration,deleteHome,updateDevice,Addnode,updateroom ,updateuserdata ,deleteRoom,kickuser,Login,deleteDevice, verify ,Homecreate,getUserData,addDevice,addRoom,Home_user,reverify,forgotpassword,Refresh_token, Join_Home} = require("../Controller/controller");
->>>>>>> 3d837c12066cf2b957e014803e0ba0386608820d
+const { Registration,deleteHome,updateDevice,getHomedata,Addnode,updateroom ,updateuserdata ,deleteRoom,kickuser,Login,deleteDevice, verify ,Homecreate,getUserData,addDevice,addRoom,Join_Home,reverify,forgotpassword,Refresh_token} = require("../Controller/controller");
 
 
 

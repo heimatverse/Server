@@ -336,16 +336,6 @@ const Homecreate = async (req, res) => {
 };
 
 
-<<<<<<< HEAD
-//JOIN HOME
-const Home_user = async (req, res) => {
-    const { Email, Home_Id } = req.body;//Email = User _id
-    try {
-        //Email and Home_id
-        if (Email && Home_Id) {
-            //Find user from DataBase
-            const user = await DataBase.findOne({ Email: Email });
-=======
 
 const Join_Home = async (req, res) => {
     const { user_Id, Home_Id } = req.body;
@@ -354,18 +344,9 @@ const Join_Home = async (req, res) => {
         if (user_Id && Home_Id) {
             const user = await DataBase.findById(user_Id);
             const homeName = await HomeDB.findById(Home_Id)
->>>>>>> 3d837c12066cf2b957e014803e0ba0386608820d
             if (user) {
                 ////// Use user.Verified if user verification needed in these api
                 // if (user.Verified) {
-<<<<<<< HEAD
-                    const user_id = user._id;
-                //updating Home Userdata with new data
-                    const updatedHome = await HomeDB.findOneAndUpdate({ _id: Home_Id }, { $addToSet: { User_ID: user_id } }, { new: true });
-                //updating Home Userdata with new data
-                    const updatedUser = await DataBase.findOneAndUpdate({ Email: Email }, { Home_Id: Home_Id } , { new: true });
-                    return res.status(200).json({ message: "Home Joined", updatedHome, updatedUser });
-=======
                     const join = new JoinModel({
                         homeID: Home_Id,
                         Home_Name: homeName.HomeName,
@@ -375,7 +356,6 @@ const Join_Home = async (req, res) => {
 
                     const updatehome = await HomeDB.findOneAndUpdate({_id:Home_Id},{ $addToSet: { User_ID:user_Id } }  , { new: true });
                     return res.status(200).json({ message: "Home Joined", updatehome, updateuser });
->>>>>>> 3d837c12066cf2b957e014803e0ba0386608820d
                 
             } else {
                 return res.status(404).json({ message: "User not found" });
@@ -742,13 +722,8 @@ const getHomedata = async(req,res)=>{
     }catch(error){
         console.log(error);
         return res.status(500).json(error);
-
-<<<<<<< HEAD
     }
 }
 
-module.exports = { Registration, getHomedata,Login, Addnode ,deleteRoom,verify, Homecreate,deleteDevice, addDevice, addRoom, kickuser,Home_user,updateDevice,updateroom,getUserData, reverify,updateuserdata, forgotpassword ,deleteHome,Refresh_token};
-=======
 module.exports = { Registration, Login, Addnode ,deleteRoom,verify, Homecreate,deleteDevice, addDevice, addRoom, kickuser,Join_Home,updateDevice,updateroom,getUserData, reverify,updateuserdata, forgotpassword ,deleteHome,Refresh_token};
->>>>>>> 3d837c12066cf2b957e014803e0ba0386608820d
 

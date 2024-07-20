@@ -725,5 +725,5 @@ const getHomedata = async(req,res)=>{
     }
 }
 
-module.exports = { Registration, Login, Addnode ,deleteRoom,verify, Homecreate,deleteDevice, addDevice, addRoom, kickuser,Join_Home,updateDevice,updateroom,getUserData, reverify,updateuserdata, forgotpassword ,deleteHome,Refresh_token};
+module.exports = { Registration, Login, Addnode ,deleteRoom,verify, Homecreate,deleteDevice, addDevice, addRoom, kickuser,Join_Home,updateDevice,updateroom,getUserData, reverify,updateuserdata, forgotpassword ,deleteHome,Refresh_token, getHomedata};
 

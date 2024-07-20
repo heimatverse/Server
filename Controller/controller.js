@@ -151,15 +151,20 @@ const deleteHome = async (req, res) => {
 const Login = async (req, res) => {
     const { Email, Password } = req.body;
     try {
+        //find user in database
         const exist = await DataBase.findOne({ Email });
         if (exist) {
+            //match passwords
             const passwordMatch = await bcrypt.compare(Password, exist.Password);
             if (passwordMatch) {
+                //create JWT token
                 const token = Create_token(exist._id);
+                //create Refresh token
                 const refreshtoken = refresh_token(exist._id);
                 exist.Refreshtoken = refreshtoken;
                 await exist.save(); // Save the updated user with refresh token
 
+                //COOKIE
                 res.cookie('Refresh', refreshtoken, { httpOnly: true, sameSite: 'strict' })
                    .cookie('JWTToken', token, { httpOnly: true, sameSite: 'strict' });
                 
@@ -243,9 +248,7 @@ const forgotpassword = async (req, res) => {
                     } else {
                         return res.status(401).json({ message: "Incorrect password" });
                     }
-                // } else {
-                //     return res.status(401).json({ message: "User not verified" });
-                // }
+
             } else {
                 return res.status(404).json({ message: "Email not found" });
             }
@@ -286,28 +289,30 @@ const Registration = async (req, res) => {
 
 const Homecreate = async (req, res) => {
     const { Email, HomeName } = req.body;
+    //Creating Topic
     const Topic = (Math.floor(100000000000 + Math.random() * 900000000000)).toString();
     
-    console.log(Email);
-    
+    //Check is Email and HomeName is provide or not
     if (!Email || !HomeName) {
         return res.status(400).json({ message: "Provide Email or HomeName" });
     }
 
     try {
+        //Find user in database
         const user = await DataBase.findOne({ Email });
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
+        //check if user already have Home created or alredy join some Home
         if (user.Home_Id != null) {
             return res.status(400).json({ message: "User already has a home" });
         }
 
         const user_id = user._id;
-        console.log(user_id);
 
+        //Creating New Home
         const Home_owner = new HomeDB({ 
             HomeName, 
             Home_owner: user_id, 
@@ -318,6 +323,8 @@ const Homecreate = async (req, res) => {
         await Home_owner.save();
 
         const HomeID = Home_owner._id;
+        
+        //Updating User with created user id
         await DataBase.findOneAndUpdate({ Email }, { Home_Id: HomeID });
 
         return res.status(200).json({ message: "Home is created", HomeID });
@@ -328,18 +335,21 @@ const Homecreate = async (req, res) => {
 };
 
 
-
+//JOIN HOME
 const Home_user = async (req, res) => {
-    const { Email, Home_Id } = req.body;
+    const { Email, Home_Id } = req.body;//Email = User _id
     try {
+        //Email and Home_id
         if (Email && Home_Id) {
+            //Find user from DataBase
             const user = await DataBase.findOne({ Email: Email });
             if (user) {
+                ////// Use user.Verified if user verification needed in these api
                 // if (user.Verified) {
                     const user_id = user._id;
-
+                //updating Home Userdata with new data
                     const updatedHome = await HomeDB.findOneAndUpdate({ _id: Home_Id }, { $addToSet: { User_ID: user_id } }, { new: true });
-
+                //updating Home Userdata with new data
                     const updatedUser = await DataBase.findOneAndUpdate({ Email: Email }, { Home_Id: Home_Id } , { new: true });
                     return res.status(200).json({ message: "Home Joined", updatedHome, updatedUser });
                 
@@ -394,6 +404,7 @@ const addRoom = async (req, res) => {
         const home = await HomeDB.findOne({ _id: Home_Id, Home_owner: user._id });
         if (!home) return res.status(404).json({ message: "User is not the owner of the Home or Home not found" });
 
+        //THis is for Unique Room Name
         const sameRoomName = await RoomDB.findOne({ Room_Name: RoomName, Home_id: Home_Id });
         if (sameRoomName) {
             return res.status(404).json({ message: "Room name already exists" });
@@ -424,8 +435,8 @@ const addRoom = async (req, res) => {
 
 const getUserData = async (req, res) => {
     const { Email } = req.query;
-    console.log(Email);
     try {
+        //Populate user to destructure data
         const user = await DataBase.findOne({ Email })
             .populate({
                 path: 'Home_Id',
@@ -436,7 +447,7 @@ const getUserData = async (req, res) => {
                     }
                 }
             });
-            console.log(user.Home_Id)
+            
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
@@ -451,6 +462,7 @@ const getUserData = async (req, res) => {
 const deleteRoom = async (req, res) => {
     const { user_id, home_id, room_id } = req.body;
     try {
+        //Find user from Home Data Base
         const home = await HomeDB.findById(home_id);
         if (!home) {
             return res.status(404).json({ error: "Home not found" });
@@ -465,7 +477,7 @@ const deleteRoom = async (req, res) => {
         if (index === -1) {
             return res.status(404).json({ error: "Room is not in this Home" });
         }
-
+        //find and delete Room  
         const delete_Room = await RoomDB.findByIdAndDelete(room_id);
         home.Room_ID.splice(index, 1);
         await home.save();
@@ -533,10 +545,6 @@ const updateuserdata = async (req, res) => {
 
 const deleteDevice = async (req, res) => {
     const { device_id, Email, home_id, Room_id } = req.body;
-    console.log(home_id)
-    console.log(device_id)
-    console.log(Room_id)
-    console.log(Email)
     try {
         const user = await DataBase.findOne({ Email: Email });
         if (!user) return res.status(400).json({ message: "User not found" });
@@ -701,6 +709,18 @@ const Addnode = async (req, res) => {
     }
 };
 
+const getHomedata = async(req,res)=>{
+    const {HomeID}=req.body;
+    try{
+        const data = await HomeDB.findById(HomeID);
+        console.log(data);
+        return res.status(200).json(data);
+    }catch(error){
+        console.log(error);
+        return res.status(500).json(error);
 
-module.exports = { Registration, Login, Addnode ,deleteRoom,verify, Homecreate,deleteDevice, addDevice, addRoom, kickuser,Home_user,updateDevice,updateroom,getUserData, reverify,updateuserdata, forgotpassword ,deleteHome,Refresh_token};
+    }
+}
+
+module.exports = { Registration, getHomedata,Login, Addnode ,deleteRoom,verify, Homecreate,deleteDevice, addDevice, addRoom, kickuser,Home_user,updateDevice,updateroom,getUserData, reverify,updateuserdata, forgotpassword ,deleteHome,Refresh_token};
 

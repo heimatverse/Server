@@ -1,7 +1,7 @@
 const express = require("express");
 const Routes = express.Router();
 const {Authentication} = require("../Middleware/JWT")
-const { Registration,deleteHome,updateDevice,Addnode,updateroom ,updateuserdata ,deleteRoom,kickuser,Login,deleteDevice, verify ,Homecreate,getUserData,addDevice,addRoom,Home_user,reverify,forgotpassword,Refresh_token} = require("../Controller/controller");
+const { Registration,deleteHome,updateDevice,getHomedata,Addnode,updateroom ,updateuserdata ,deleteRoom,kickuser,Login,deleteDevice, verify ,Homecreate,getUserData,addDevice,addRoom,Home_user,reverify,forgotpassword,Refresh_token} = require("../Controller/controller");
 
 
 
@@ -24,5 +24,6 @@ Routes.route("/login").post(Login);
 Routes.route("/reverify").post(reverify);
 Routes.route("/refresh").post(Refresh_token);
 Routes.route("/userdata").get(getUserData)
+Routes.route("/getHomedata").get(getHomedata);
 
 module.exports = Routes;

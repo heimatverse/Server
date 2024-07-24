@@ -496,7 +496,7 @@ const deleteRoom = async (req, res) => {
 
 
 const addDevice = async (req, res) => {
-    const { Email, Room_id, Home_Id, Device_name } = req.body;
+    const { Email, Room_id, Home_Id, Device_name, ip_address, mac_address } = req.body;
     try {
         const user = await DataBase.findOne({ Email: Email });
         if (!user) return res.status(400).json({ message: "User not found" });
@@ -508,7 +508,12 @@ const addDevice = async (req, res) => {
         if (Device_in_room) {
             return res.status(400).json({ Messaage: "room already have this named device" });
         }
-        const device = new DeviceDB({ Device_name: Device_name, Room_id: Room_id });
+        const device = new DeviceDB({ 
+            Device_name: Device_name,
+            Room_id: Room_id,
+            ip_address: ip_address,
+            mac_address: mac_address 
+        });
         await device.save();
 
         const room = await RoomDB.findById(Room_id);

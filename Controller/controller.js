@@ -117,7 +117,7 @@ const deleteHome = async (req, res) => {
         }
 
         // Check if the user is the owner of the home
-        if  (home.Home_owner.toString() !== user_id) {
+        if  (home.Home_owner._id.toString() !== user_id) {
             return res.status(401).json({ error: "USER NOT OWNER OF HOME" });
         }
 

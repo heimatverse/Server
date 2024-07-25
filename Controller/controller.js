@@ -504,10 +504,25 @@ const addDevice = async (req, res) => {
         const home = await HomeDB.findOne({ _id: Home_Id, Home_owner: user._id, Room_ID: Room_id });
         if (!home) return res.status(404).json({ message: "User is not the owner of the Home or Home not found" });
 
-        const Device_in_room = await DeviceDB.findOne({ Device_name: Device_name, Room_id: Room_id });
-        if (Device_in_room) {
-            return res.status(400).json({ Messaage: "room already have this named device" });
+        const Device_in_room_name = await DeviceDB.findOne({ 
+            Device_name: Device_name, 
+            Room_id: Room_id,  
+        });
+
+        const Device_in_room_ip = await DeviceDB.findOne({
+            Room_id: Room_id,
+            ip_address: ip_address
+        });
+
+        const Device_in_room_mac = await DeviceDB.findOne({
+            Room_id: Room_id,
+            mac_address: mac_address,
+        });
+
+        if (Device_in_room_name || Device_in_room_ip || Device_in_room_mac) {
+            return res.status(400).json({ Messaage: "Device Already Exists" });
         }
+
         const device = new DeviceDB({ 
             Device_name: Device_name,
             Room_id: Room_id,
@@ -521,7 +536,7 @@ const addDevice = async (req, res) => {
         // if (user.Verified) {
             room.Devices_id.push(device._id);
             await room.save();
-            return res.status(200).json({ message: "device is added", deviceID:device._id});
+            return res.status(200).json({ message: "Device is added", deviceID:device._id});
 
 
     } catch (error) {

@@ -736,7 +736,13 @@ const Addnode = async (req, res) => {
 const getHomedata = async(req,res)=>{
     const {HomeID}=req.body;
     try{
-        const data = await HomeDB.findById(HomeID);
+        const data = await HomeDB.findById(HomeID)
+            .populate({
+                path: 'Room_ID',
+                populate: {
+                    path: 'Devices_id'
+                }
+            });
         console.log(data);
         return res.status(200).json(data);
     }catch(error){

@@ -509,17 +509,17 @@ const addDevice = async (req, res) => {
             Room_id: Room_id,  
         });
 
-        const Device_in_room_ip = await DeviceDB.findOne({
-            Room_id: Room_id,
-            ip_address: ip_address
-        });
+        // const Device_in_room_ip = await DeviceDB.findOne({
+        //     Room_id: Room_id,
+        //     ip_address: ip_address
+        // });
 
-        const Device_in_room_mac = await DeviceDB.findOne({
-            Room_id: Room_id,
-            mac_address: mac_address,
-        });
+        // const Device_in_room_mac = await DeviceDB.findOne({
+        //     Room_id: Room_id,
+        //     mac_address: mac_address,
+        // });
 
-        if (Device_in_room_name || Device_in_room_ip || Device_in_room_mac) {
+        if (Device_in_room_name) {
             return res.status(400).json({ Messaage: "Device Already Exists" });
         }
 
@@ -749,6 +749,10 @@ const getHomedata = async(req,res)=>{
         console.log(error);
         return res.status(500).json(error);
     }
+}
+
+const updateNode = async(req, res) => {
+    const {HomeID, DeviceID, node_type} = req.body
 }
 
 module.exports = { Registration, Login, Addnode ,deleteRoom,verify, Homecreate,deleteDevice, addDevice, addRoom, kickuser,Join_Home,updateDevice,updateroom,getUserData, reverify,updateuserdata, forgotpassword ,deleteHome,Refresh_token, getHomedata};

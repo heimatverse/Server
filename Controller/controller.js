@@ -687,16 +687,13 @@ const updateDevice = async (req, res) => {
 };
 
 const Addnode = async (req, res) => {
-    const { Email, RoomID, HomeID, DeviceID, NodeType, NodeName, NodeIcon } = req.body;
+    const {RoomID, HomeID, DeviceID, NodeType, NodeName, NodeIcon } = req.body;
 
-    if (!Email || !RoomID || !HomeID || !DeviceID || !NodeType || !NodeName || !NodeIcon) {
+    if (!RoomID || !HomeID || !DeviceID || !NodeType || !NodeName || !NodeIcon) {
         return res.status(400).json({ message: "Provide Email, RoomID, HomeID, DeviceID, NodeType, NodeName, NodeIcon" });
     }
 
     try {
-        const user = await DataBase.findOne({ Email });
-        if (!user) return res.status(400).json({ message: "Email not found" });
-
         const home = await HomeDB.findById(HomeID);
         if (!home) return res.status(400).json({ message: "Home not found" });
         // if (user._id != home.Home_owner) return res.status(400).json({ message: "User is not the owner of this home" });
@@ -751,9 +748,6 @@ const getHomedata = async(req,res)=>{
     }
 }
 
-const updateNode = async(req, res) => {
-    const {HomeID, DeviceID, node_type} = req.body
-}
 
 module.exports = { Registration, Login, Addnode ,deleteRoom,verify, Homecreate,deleteDevice, addDevice, addRoom, kickuser,Join_Home,updateDevice,updateroom,getUserData, reverify,updateuserdata, forgotpassword ,deleteHome,Refresh_token, getHomedata};
 

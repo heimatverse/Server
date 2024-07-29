@@ -15,7 +15,7 @@ services:
       NODE_ENV: production
     ports:
       - 8888:8888
-      - 1884:1884/mqtt
+      - 1883:1883/mqtt
       - 8884:8884
 
 # The commented out section below is an example of how to define a PostgreSQL

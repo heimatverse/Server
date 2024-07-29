@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/Heimatverse/",require("./Routes/routes"))
 
 
-MQTT_Port = 1883
+MQTT_Port = 1884
 const wsPort = 8884
 server.listen(MQTT_Port, function () {
     console.log('Aedes MQTT server started and listening on port', MQTT_Port)

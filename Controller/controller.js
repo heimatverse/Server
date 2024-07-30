@@ -698,7 +698,7 @@ const Addnode = async (req, res) => {
         if (!home) return res.status(400).json({ message: "Home not found" });
         // if (user._id != home.Home_owner) return res.status(400).json({ message: "User is not the owner of this home" });
 
-        const home_ = await HomeDB.findOne({ _id: HomeID, Home_owner: user._id, Room_ID: RoomID });
+        const home_ = await HomeDB.findOne({ _id: HomeID, Room_ID: RoomID });
         if (!home_) return res.status(404).json({ message: "User is not the owner of the Home" });
 
         const room = await RoomDB.findById(RoomID);

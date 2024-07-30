@@ -447,7 +447,10 @@ const getUserData = async (req, res) => {
                 populate: {
                     path: 'Room_ID',
                     populate: {
-                        path: 'Devices_id'
+                        path: 'Devices_id',
+                        populate: {
+                            path: 'Node_id'
+                        }
                     }
                 }
             });

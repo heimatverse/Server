@@ -687,9 +687,9 @@ const updateDevice = async (req, res) => {
 };
 
 const Addnode = async (req, res) => {
-    const {RoomID, HomeID, DeviceID, NodeType, NodeName, NodeIcon } = req.body;
+    const {RoomID, HomeID, DeviceID, NodeType, NodeName, NodeIcon, NodeNumber } = req.body;
 
-    if (!RoomID || !HomeID || !DeviceID || !NodeType || !NodeName || !NodeIcon) {
+    if (!RoomID || !HomeID || !DeviceID || !NodeType || !NodeName || !NodeIcon || !NodeNumber) {
         return res.status(400).json({ message: "Provide Email, RoomID, HomeID, DeviceID, NodeType, NodeName, NodeIcon" });
     }
 
@@ -717,7 +717,7 @@ const Addnode = async (req, res) => {
         if(node_in_device){
             return res.status(400).json({message:"thus named node is already in this device"})
         }
-        const node = new NodeDB({ type: NodeType, Name: NodeName, Icon: NodeIcon, Device_id: DeviceID });
+        const node = new NodeDB({ type: NodeType, Name: NodeName, Icon: NodeIcon, Node_Number: NodeNumber, Device_id: DeviceID });
         await node.save();
 
         device.Node_id.push(node._id);
@@ -737,7 +737,10 @@ const getHomedata = async(req,res)=>{
             .populate({
                 path: 'Room_ID',
                 populate: {
-                    path: 'Devices_id'
+                    path: 'Devices_id',
+                    populate: {
+                        path: 'Node_id'
+                    }
                 }
             });
         console.log(data);

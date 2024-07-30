@@ -3,6 +3,7 @@ const NodeSchema =  new mongoose.Schema({
     type:{type:String},
     Name:{type:String},
     Icon:{type:String},
+    Node_Number:{type:String},
     Device_id:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Device-data'
